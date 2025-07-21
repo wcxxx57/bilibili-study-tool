@@ -1,0 +1,897 @@
+{% extends 'bilistudy/base.html' %}
+
+{% block title %}账户设置 - B站学习助手{% endblock %}
+
+{% block extra_css %}
+<style>
+/* 主题选择器样式 */
+.theme-option {
+    margin-bottom: 1rem;
+}
+
+.theme-label {
+    cursor: pointer;
+    display: block;
+    padding: 1rem;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    background: white;
+}
+
+.theme-label:hover {
+    border-color: #3b82f6;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
+}
+
+.form-check-input:checked + .theme-label {
+    border-color: #3b82f6;
+    background: #eff6ff;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+}
+
+.theme-preview {
+    width: 100%;
+    height: 60px;
+    border-radius: 6px;
+    margin-bottom: 0.75rem;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.light-preview {
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+}
+
+.light-preview .theme-header {
+    height: 20px;
+    background: linear-gradient(90deg, #3b82f6, #1d4ed8);
+    width: 100%;
+}
+
+.light-preview .theme-content {
+    height: 40px;
+    background: #ffffff;
+    margin: 4px;
+    border-radius: 4px;
+    border: 1px solid #e5e7eb;
+}
+
+.dark-preview {
+    background: linear-gradient(135deg, #0f1419 0%, #1e293b 100%);
+}
+
+.dark-preview .theme-header {
+    height: 20px;
+    background: linear-gradient(90deg, #3b82f6, #1d4ed8);
+    width: 100%;
+}
+
+.dark-preview .theme-content {
+    height: 40px;
+    background: #1e293b;
+    margin: 4px;
+    border-radius: 4px;
+    border: 1px solid #374151;
+}
+
+.theme-info {
+    text-align: center;
+}
+
+.theme-info strong {
+    display: block;
+    margin-bottom: 0.25rem;
+    color: #374151;
+}
+
+.form-check-input:checked + .theme-label .theme-info strong {
+    color: #1d4ed8;
+}
+
+.theme-info small {
+    font-size: 0.8rem;
+}
+
+/* 深色主题下的样式适配 */
+[data-theme="dark"] .theme-label {
+    background: #1e293b;
+    border-color: #374151;
+    color: #e2e8f0;
+}
+
+[data-theme="dark"] .theme-label:hover {
+    border-color: #3b82f6;
+    background: #253344;
+}
+
+[data-theme="dark"] .form-check-input:checked + .theme-label {
+    background: #1e3a8a;
+    border-color: #3b82f6;
+}
+
+[data-theme="dark"] .theme-info strong {
+    color: #e2e8f0;
+}
+
+[data-theme="dark"] .form-check-input:checked + .theme-label .theme-info strong {
+    color: #60a5fa;
+}
+
+/* 主题切换动画效果 */
+.theme-switching {
+    animation: themeSwitch 0.5s ease-in-out;
+}
+
+@keyframes themeSwitch {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3); }
+    100% { transform: scale(1); }
+}
+
+/* 预览按钮样式 */
+#previewThemeBtn {
+    transition: all 0.3s ease;
+}
+
+#previewThemeBtn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+}
+
+/* 主题选项卡片悬停效果 */
+.theme-option:hover .theme-preview {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.theme-preview {
+    transition: all 0.3s ease;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">
+                        <i class="fas fa-cog me-2"></i>账户设置
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <!-- 账户信息 -->
+                    <div class="mb-4">
+                        <h5 class="text-primary">
+                            <i class="fas fa-user me-2"></i>账户信息
+                        </h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">用户名</label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" id="currentUsername" value="{{ user.username }}" readonly>
+                                        <button type="button" class="btn btn-outline-secondary" id="editUsernameBtn" title="修改用户名">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">当前邮箱</label>
+                                    <input type="email" class="form-control" value="{{ user.email }}" readonly>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">注册时间</label>
+                                    <input type="text" class="form-control" value="{{ user.date_joined|date:'Y-m-d H:i' }}" readonly>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">最后登录</label>
+                                    <input type="text" class="form-control" value="{{ user.last_login|date:'Y-m-d H:i'|default:'从未登录' }}" readonly>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <!-- 修改密码 -->
+                    <div class="mb-4">
+                        <h5 class="text-primary">
+                            <i class="fas fa-key me-2"></i>修改密码
+                        </h5>
+                        <form id="changePasswordForm">
+                            {% csrf_token %}
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="mb-3">
+                                        <label for="currentPassword" class="form-label">当前密码</label>
+                                        <input type="password" class="form-control" id="currentPassword" name="current_password" required>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="newPassword" class="form-label">新密码</label>
+                                        <input type="password" class="form-control" id="newPassword" name="new_password" required minlength="6">
+                                        <div class="form-text">密码长度至少6位</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="confirmNewPassword" class="form-label">确认新密码</label>
+                                        <input type="password" class="form-control" id="confirmNewPassword" name="confirm_password" required>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i>修改密码
+                            </button>
+                        </form>
+                    </div>
+
+                    <hr>
+
+                    <!-- 修改邮箱 -->
+                    <div class="mb-4">
+                        <h5 class="text-primary">
+                            <i class="fas fa-envelope me-2"></i>修改邮箱
+                        </h5>
+                        <form id="changeEmailForm">
+                            {% csrf_token %}
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="mb-3">
+                                        <label for="emailCurrentPassword" class="form-label">当前密码</label>
+                                        <input type="password" class="form-control" id="emailCurrentPassword" name="current_password" required>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <div class="mb-3">
+                                        <label for="newEmail" class="form-label">新邮箱</label>
+                                        <input type="email" class="form-control" id="newEmail" name="new_email" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label class="form-label">&nbsp;</label>
+                                        <button type="button" class="btn btn-outline-secondary w-100" id="sendEmailChangeCode">
+                                            获取验证码
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="emailVerificationCode" class="form-label">邮箱验证码</label>
+                                        <input type="text" class="form-control" id="emailVerificationCode" name="verification_code" required maxlength="6">
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i>修改邮箱
+                            </button>
+                        </form>
+                    </div>
+
+                    <hr>
+
+                    <!-- 界面主题设置 -->
+                    <div class="mb-4">
+                        <h5 class="text-primary">
+                            <i class="fas fa-palette me-2"></i>界面主题设置
+                        </h5>
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label class="form-label"><strong>主题偏好</strong></label>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-check theme-option">
+                                                <input class="form-check-input" type="radio" name="themePreference" id="lightTheme" value="light"
+                                                       {% if user_preference.theme_preference == 'light' %}checked{% endif %}>
+                                                <label class="form-check-label theme-label" for="lightTheme">
+                                                    <div class="theme-preview light-preview">
+                                                        <div class="theme-header"></div>
+                                                        <div class="theme-content"></div>
+                                                    </div>
+                                                    <div class="theme-info">
+                                                        <i class="fas fa-sun me-2 text-warning"></i>
+                                                        <strong>白天模式</strong>
+                                                        <small class="d-block text-muted">明亮清爽，适合白天使用</small>
+                                                    </div>
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-check theme-option">
+                                                <input class="form-check-input" type="radio" name="themePreference" id="darkTheme" value="dark"
+                                                       {% if user_preference.theme_preference == 'dark' %}checked{% endif %}>
+                                                <label class="form-check-label theme-label" for="darkTheme">
+                                                    <div class="theme-preview dark-preview">
+                                                        <div class="theme-header"></div>
+                                                        <div class="theme-content"></div>
+                                                    </div>
+                                                    <div class="theme-info">
+                                                        <i class="fas fa-moon me-2 text-info"></i>
+                                                        <strong>夜间模式</strong>
+                                                        <small class="d-block text-muted">护眼深色，适合夜间使用</small>
+                                                    </div>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row mt-3">
+                                    <div class="col-md-8">
+                                        <div class="alert alert-info mb-0">
+                                            <i class="fas fa-info-circle me-2"></i>
+                                            <strong>提示：</strong>选择您喜欢的界面主题，设置会立即生效并自动保存。
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 text-end">
+                                        <button type="button" class="btn btn-outline-primary btn-sm" id="previewThemeBtn">
+                                            <i class="fas fa-eye me-1"></i>预览效果
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <!-- 学习内容提醒设置 -->
+                    <div class="mb-4">
+                        <h5 class="text-primary">
+                            <i class="fas fa-bell me-2"></i>学习内容提醒
+                        </h5>
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="contentFilterReminderSwitch"
+                                           {% if user_preference.enable_content_filter_reminder %}checked{% endif %}>
+                                    <label class="form-check-label" for="contentFilterReminderSwitch">
+                                        <strong>启用学习内容提醒</strong>
+                                    </label>
+                                </div>
+                                <small class="text-muted d-block mb-3">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    开启后，当您搜索可能与学习无关的内容时，系统会友好提醒您专注学习。
+                                </small>
+
+                                <!-- 忽略的关键词列表 -->
+                                <div class="mt-3" id="ignoredKeywordsSection" style="{% if not user_preference.ignored_keywords %}display: none;{% endif %}">
+                                    <label class="form-label small">已忽略的搜索关键词：</label>
+                                    <div id="ignoredKeywordsList" class="d-flex flex-wrap gap-1">
+                                        <!-- 动态加载忽略的关键词 -->
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary mt-2" id="clearIgnoredKeywords">
+                                        <i class="fas fa-trash me-1"></i>清空忽略列表
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <!-- 学习统计 -->
+                    <div class="mb-4">
+                        <h5 class="text-primary">
+                            <i class="fas fa-chart-bar me-2"></i>学习统计
+                        </h5>
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <div class="h3 text-primary">{{ user.courses.count }}</div>
+                                    <div class="text-muted">收藏课程</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <div class="h3 text-success">{{ user.study_plans.count }}</div>
+                                    <div class="text-muted">学习计划</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <div class="h3 text-warning">{{ completed_episodes }}</div>
+                                    <div class="text-muted">完成章节</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <div class="h3 text-info">{{ total_study_minutes }}</div>
+                                    <div class="text-muted">学习分钟</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 危险操作区域 -->
+                    <div class="mb-4">
+                        <h5 class="text-danger">
+                            <i class="fas fa-exclamation-triangle me-2"></i>注销账号
+                        </h5>
+                        <div class="alert alert-warning">
+                            <i class="fas fa-warning me-2"></i>
+                            <strong>注意：</strong>以下操作不可逆，请谨慎操作！
+                        </div>
+                        <div class="d-grid">
+                            <button type="button" class="btn btn-danger" id="deleteAccountBtn">
+                                <i class="fas fa-user-times me-2"></i>注销账号
+                            </button>
+                        </div>
+                        <div class="form-text text-muted mt-2">
+                            注销账号将永久删除您的账户信息和所有学习记录，此操作不可恢复。
+                        </div>
+                    </div>
+
+                    <div class="text-center">
+                        <a href="{% url 'index' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-1"></i>返回首页
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 修改用户名模态框 -->
+<div class="modal fade" id="changeUsernameModal" tabindex="-1" aria-labelledby="changeUsernameModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="changeUsernameModalLabel">
+                    <i class="fas fa-user-edit me-2"></i>修改用户名
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="changeUsernameForm">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="usernameCurrentPassword" class="form-label">当前密码</label>
+                        <input type="password" class="form-control" id="usernameCurrentPassword" name="current_password" required>
+                        <div class="form-text">为了安全，修改用户名需要验证当前密码</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="newUsername" class="form-label">新用户名</label>
+                        <input type="text" class="form-control" id="newUsername" name="new_username" required minlength="3" maxlength="20">
+                        <div class="form-text">用户名长度3-20个字符，只能包含字母、数字、下划线和中文</div>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i>修改用户名
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 注销账号确认模态框 -->
+<div class="modal fade" id="deleteAccountModal" tabindex="-1" aria-labelledby="deleteAccountModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteAccountModalLabel">
+                    <i class="fas fa-exclamation-triangle me-2"></i>确认注销账号
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-4">
+                    <i class="fas fa-user-times fa-4x text-danger mb-3"></i>
+                    <h5 class="text-danger">注销账户会删除账户信息并清除该账户的所有学习记录，您确定要注销吗？</h5>
+                </div>
+
+                <div class="alert alert-danger">
+                    <h6><i class="fas fa-exclamation-triangle me-2"></i>此操作将删除以下数据：</h6>
+                    <ul class="mb-0">
+                        <li>账户基本信息（用户名、邮箱等）</li>
+                        <li>所有课程列表和学习进度</li>
+                        <li>所有学习计划和每日记录</li>
+                        <li>AI助手聊天历史记录</li>
+                        <li>其他所有相关数据</li>
+                    </ul>
+                </div>
+
+                <form id="deleteAccountForm">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="deleteAccountPassword" class="form-label">
+                            <strong>请输入您的密码以确认注销：</strong>
+                        </label>
+                        <input type="password" class="form-control" id="deleteAccountPassword"
+                               name="password" required placeholder="输入当前密码">
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="confirmDelete" required>
+                            <label class="form-check-label text-danger" for="confirmDelete">
+                                <strong>我确认要永久注销此账号，并了解此操作不可恢复</strong>
+                            </label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>取消
+                </button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteAccountBtn">
+                    <i class="fas fa-user-times me-1"></i>确认注销账号
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // 修改用户名按钮点击
+    $('#editUsernameBtn').on('click', function() {
+        $('#newUsername').val($('#currentUsername').val());
+        $('#changeUsernameModal').modal('show');
+    });
+
+    // 修改用户名表单提交
+    $('#changeUsernameForm').on('submit', function(e) {
+        e.preventDefault();
+
+        const formData = new FormData(this);
+
+        $.ajax({
+            url: '{% url "change_username" %}',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                if (response.success) {
+                    alert(response.message);
+                    $('#currentUsername').val(response.new_username);
+                    $('#changeUsernameModal').modal('hide');
+                    $('#changeUsernameForm')[0].reset();
+
+                    // 更新导航栏中的用户名显示
+                    $('.navbar .dropdown-toggle').contents().filter(function() {
+                        return this.nodeType === 3; // 文本节点
+                    }).last().replaceWith(' ' + response.new_username);
+                } else {
+                    alert(response.message);
+                }
+            },
+            error: function() {
+                alert('请求失败，请稍后重试');
+            }
+        });
+    });
+
+    // 修改密码表单提交
+    $('#changePasswordForm').on('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        
+        $.ajax({
+            url: '{% url "change_password" %}',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                if (response.success) {
+                    alert(response.message);
+                    $('#changePasswordForm')[0].reset();
+                } else {
+                    alert(response.message);
+                }
+            },
+            error: function() {
+                alert('请求失败，请稍后重试');
+            }
+        });
+    });
+
+    // 发送邮箱修改验证码
+    $('#sendEmailChangeCode').on('click', function() {
+        const newEmail = $('#newEmail').val();
+        const currentPassword = $('#emailCurrentPassword').val();
+        
+        if (!newEmail || !currentPassword) {
+            alert('请先填写新邮箱和当前密码');
+            return;
+        }
+        
+        const button = $(this);
+        button.prop('disabled', true).text('发送中...');
+        
+        $.ajax({
+            url: '{% url "send_verification_code" %}',
+            type: 'POST',
+            data: {
+                'email': newEmail,
+                'purpose': 'change_email',
+                'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
+            },
+            success: function(response) {
+                alert(response.message);
+                if (response.success) {
+                    // 开始倒计时
+                    let countdown = 60;
+                    const timer = setInterval(function() {
+                        button.text(countdown + 's后重发');
+                        countdown--;
+                        if (countdown < 0) {
+                            clearInterval(timer);
+                            button.prop('disabled', false).text('获取验证码');
+                        }
+                    }, 1000);
+                } else {
+                    button.prop('disabled', false).text('获取验证码');
+                }
+            },
+            error: function() {
+                alert('发送失败，请稍后重试');
+                button.prop('disabled', false).text('获取验证码');
+            }
+        });
+    });
+
+    // 修改邮箱表单提交
+    $('#changeEmailForm').on('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        
+        $.ajax({
+            url: '{% url "change_email_request" %}',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                if (response.success) {
+                    alert(response.message);
+                    location.reload(); // 刷新页面显示新邮箱
+                } else {
+                    alert(response.message);
+                }
+            },
+            error: function() {
+                alert('请求失败，请稍后重试');
+            }
+        });
+    });
+
+    // 注销账号按钮点击
+    $('#deleteAccountBtn').on('click', function() {
+        $('#deleteAccountModal').modal('show');
+    });
+
+    // 确认注销账号
+    $('#confirmDeleteAccountBtn').on('click', function() {
+        const password = $('#deleteAccountPassword').val();
+        const confirmed = $('#confirmDelete').is(':checked');
+
+        if (!password) {
+            alert('请输入密码');
+            return;
+        }
+
+        if (!confirmed) {
+            alert('请确认您了解注销账号的后果');
+            return;
+        }
+
+        // 显示加载状态
+        const $btn = $(this);
+        const originalText = $btn.html();
+        $btn.html('<i class="fas fa-spinner fa-spin me-1"></i>注销中...').prop('disabled', true);
+
+        // 发送注销请求
+        $.ajax({
+            url: '{% url "delete_account" %}',
+            type: 'POST',
+            data: {
+                'password': password,
+                'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
+            },
+            success: function(response) {
+                if (response.success) {
+                    alert(response.message);
+                    // 注销成功后跳转到首页
+                    window.location.href = '/';
+                } else {
+                    alert(response.message);
+                    // 恢复按钮状态
+                    $btn.html(originalText).prop('disabled', false);
+                }
+            },
+            error: function() {
+                alert('请求失败，请稍后重试');
+                // 恢复按钮状态
+                $btn.html(originalText).prop('disabled', false);
+            }
+        });
+    });
+
+    // 主题切换处理
+    $('input[name="themePreference"]').on('change', function() {
+        const selectedTheme = $(this).val();
+        const $selectedLabel = $(this).next('.theme-label');
+
+        // 添加切换动画效果
+        $selectedLabel.addClass('theme-switching');
+
+        // 立即切换主题
+        document.documentElement.setAttribute('data-theme', selectedTheme);
+
+        // 显示切换提示
+        showMessage(`已切换到${selectedTheme === 'dark' ? '夜间' : '白天'}模式`, 'success');
+
+        $.ajax({
+            url: '{% url "update_theme" %}',
+            type: 'POST',
+            data: {
+                'theme': selectedTheme,
+                'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
+            },
+            success: function(response) {
+                $selectedLabel.removeClass('theme-switching');
+                if (response.success) {
+                    // 成功保存到服务器
+                    console.log('主题设置已保存');
+                } else {
+                    showMessage('设置保存失败：' + response.message, 'error');
+                }
+            },
+            error: function() {
+                $selectedLabel.removeClass('theme-switching');
+                showMessage('网络错误，主题设置可能未保存', 'warning');
+            }
+        });
+    });
+
+    // 主题预览按钮功能
+    $('#previewThemeBtn').on('click', function() {
+        const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+        const previewTheme = currentTheme === 'light' ? 'dark' : 'light';
+        const $btn = $(this);
+
+        // 更新按钮状态
+        $btn.html('<i class="fas fa-spinner fa-spin me-1"></i>预览中...');
+
+        // 临时切换主题
+        document.documentElement.setAttribute('data-theme', previewTheme);
+
+        // 显示预览提示
+        showMessage(`正在预览${previewTheme === 'dark' ? '夜间' : '白天'}模式，3秒后自动恢复`, 'info');
+
+        // 3秒后恢复原主题
+        setTimeout(() => {
+            document.documentElement.setAttribute('data-theme', currentTheme);
+            $btn.html('<i class="fas fa-eye me-1"></i>预览效果');
+            showMessage('已恢复原主题', 'success');
+        }, 3000);
+    });
+
+    // 学习内容提醒开关处理
+    $('#contentFilterReminderSwitch').on('change', function() {
+        const isEnabled = $(this).is(':checked');
+
+        $.ajax({
+            url: '{% url "update_content_filter" %}',
+            type: 'POST',
+            data: {
+                'enable_content_filter': isEnabled,
+                'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
+            },
+            success: function(response) {
+                if (response.success) {
+                    const message = isEnabled ? '学习内容提醒已开启' : '学习内容提醒已关闭';
+                    showMessage(message, 'success');
+                } else {
+                    showMessage('设置失败：' + response.message, 'error');
+                    // 恢复开关状态
+                    $('#contentFilterReminderSwitch').prop('checked', !isEnabled);
+                }
+            },
+            error: function() {
+                showMessage('网络错误，请稍后再试', 'error');
+                // 恢复开关状态
+                $('#contentFilterReminderSwitch').prop('checked', !isEnabled);
+            }
+        });
+    });
+
+    // 清空忽略列表
+    $('#clearIgnoredKeywords').on('click', function() {
+        if (confirm('确定要清空所有忽略的关键词吗？')) {
+            $.ajax({
+                url: '{% url "update_learning_reminder" %}',
+                type: 'POST',
+                data: {
+                    'action': 'clear_ignored',
+                    'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
+                },
+                success: function(response) {
+                    if (response.success) {
+                        $('#ignoredKeywordsList').empty();
+                        $('#ignoredKeywordsSection').hide();
+                        showMessage('已清空忽略列表', 'success');
+                    } else {
+                        showMessage('清空失败：' + response.message, 'error');
+                    }
+                },
+                error: function() {
+                    showMessage('网络错误，请稍后再试', 'error');
+                }
+            });
+        }
+    });
+
+    // 加载忽略的关键词列表
+    function loadIgnoredKeywords() {
+        {% if user_preference.ignored_keywords %}
+        try {
+            const ignoredKeywords = {{ user_preference.ignored_keywords|safe }};
+            if (ignoredKeywords && ignoredKeywords.length > 0) {
+                const container = $('#ignoredKeywordsList');
+                container.empty();
+                ignoredKeywords.forEach(function(keyword) {
+                    const badge = $('<span class="badge bg-secondary me-1 mb-1">' + keyword + '</span>');
+                    container.append(badge);
+                });
+                $('#ignoredKeywordsSection').show();
+            }
+        } catch (e) {
+            console.log('加载忽略关键词失败:', e);
+        }
+        {% endif %}
+    }
+
+    // 页面加载时加载忽略的关键词
+    loadIgnoredKeywords();
+
+    // 显示消息的辅助函数
+    function showMessage(message, type) {
+        const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+        const alertHtml = `
+            <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+        $('.card-body').first().prepend(alertHtml);
+
+        // 3秒后自动消失
+        setTimeout(function() {
+            $('.alert').fadeOut();
+        }, 3000);
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,1568 @@
+{% extends 'bilistudy/base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'bilistudy/css/custom-styles.css' %}">
+<style>
+/* AI模型选择器自定义样式 - 淡雅配色 */
+.btn-gemini {
+    background: transparent;
+    border: 2px solid #e8eaed;
+    color: #5f6368;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.btn-gemini:hover,
+.btn-check:checked + .btn-gemini {
+    background: linear-gradient(135deg, rgba(66, 133, 244, 0.1) 0%, rgba(52, 168, 83, 0.1) 50%, rgba(234, 67, 53, 0.1) 100%);
+    border-color: rgba(66, 133, 244, 0.3);
+    color: #4285f4 !important;
+    box-shadow: 0 2px 8px rgba(66, 133, 244, 0.1);
+}
+
+.btn-gemini:hover .text-muted,
+.btn-check:checked + .btn-gemini .text-muted {
+    color: rgba(95, 99, 104, 0.8) !important;
+}
+
+.btn-deepseek {
+    background: transparent;
+    border: 2px solid #e8eaed;
+    color: #5f6368;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.btn-deepseek:hover,
+.btn-check:checked + .btn-deepseek {
+    background: rgba(74, 144, 226, 0.1);
+    border-color: rgba(74, 144, 226, 0.3);
+    color: #4a90e2 !important;
+    box-shadow: 0 2px 8px rgba(74, 144, 226, 0.1);
+}
+
+.btn-deepseek:hover .text-muted,
+.btn-check:checked + .btn-deepseek .text-muted {
+    color: rgba(95, 99, 104, 0.8) !important;
+}
+
+/* 深色主题下的AI模型选择器样式 */
+[data-theme="dark"] .btn-gemini {
+    background: transparent;
+    border: 2px solid #334155;
+    color: #e2e8f0;
+}
+
+[data-theme="dark"] .btn-gemini:hover,
+[data-theme="dark"] .btn-check:checked + .btn-gemini {
+    background: linear-gradient(135deg, rgba(66, 133, 244, 0.2) 0%, rgba(52, 168, 83, 0.2) 50%, rgba(234, 67, 53, 0.2) 100%);
+    border-color: rgba(66, 133, 244, 0.5);
+    color: #60a5fa !important;
+    box-shadow: 0 4px 15px rgba(66, 133, 244, 0.2);
+}
+
+[data-theme="dark"] .btn-gemini:hover .text-muted,
+[data-theme="dark"] .btn-check:checked + .btn-gemini .text-muted {
+    color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .btn-deepseek {
+    background: transparent;
+    border: 2px solid #334155;
+    color: #e2e8f0;
+}
+
+[data-theme="dark"] .btn-deepseek:hover,
+[data-theme="dark"] .btn-check:checked + .btn-deepseek {
+    background: rgba(59, 130, 246, 0.2);
+    border-color: rgba(59, 130, 246, 0.5);
+    color: #60a5fa !important;
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.2);
+}
+
+[data-theme="dark"] .btn-deepseek:hover .text-muted,
+[data-theme="dark"] .btn-check:checked + .btn-deepseek .text-muted {
+    color: #94a3b8 !important;
+}
+
+/* 模型选择器容器样式 */
+.model-selector {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-bottom: 2px solid #dee2e6;
+}
+
+[data-theme="dark"] .model-selector {
+    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+    border-bottom: 2px solid #475569;
+}
+
+/* 图标简单动画效果 */
+.btn-gemini i,
+.btn-deepseek i {
+    transition: transform 0.2s ease;
+}
+
+.btn-gemini:hover i,
+.btn-check:checked + .btn-gemini i,
+.btn-deepseek:hover i,
+.btn-check:checked + .btn-deepseek i {
+    transform: scale(1.05);
+}
+
+/* 按钮组整体样式 */
+.btn-group .btn {
+    flex: 1;
+    min-height: 80px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+.btn-group .btn strong {
+    font-size: 1.1rem;
+    margin-bottom: 2px;
+}
+
+.btn-group .btn small {
+    font-size: 0.8rem;
+    line-height: 1.2;
+}
+
+.chat-container {
+    height: 520px;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    background: #fafafa;
+}
+
+.chat-messages {
+    height: 420px;
+    overflow-y: auto;
+    padding: 20px;
+    background: white;
+    border-radius: 10px 10px 0 0;
+}
+
+/* 深色主题下的聊天容器 */
+[data-theme="dark"] .chat-container {
+    border: 1px solid #334155;
+    background: #1e293b;
+}
+
+[data-theme="dark"] .chat-messages {
+    background: #0f1419;
+    color: #e2e8f0;
+}
+
+.message {
+    margin-bottom: 8px;
+    animation: fadeIn 0.3s ease-in;
+}
+
+.message.user {
+    text-align: right;
+}
+
+.message.ai {
+    text-align: left;
+}
+
+.message-bubble {
+    display: inline-block;
+    max-width: 70%;
+    padding: 12px 16px;
+    border-radius: 18px;
+    word-wrap: break-word;
+}
+
+.message.user .message-bubble {
+    background: #007bff;
+    color: white;
+    border-bottom-right-radius: 4px;
+}
+
+.message.ai .message-bubble {
+    background: #f1f3f4;
+    color: #333;
+    border-bottom-left-radius: 4px;
+}
+
+.chat-input-area {
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 0 0 10px 10px;
+    border-top: 1px solid #e0e0e0;
+}
+
+/* 深色主题下的消息气泡 */
+[data-theme="dark"] .message.user .message-bubble {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: #ffffff;
+}
+
+[data-theme="dark"] .message.ai .message-bubble {
+    background: #334155;
+    color: #e2e8f0;
+    border: 1px solid #475569;
+}
+
+[data-theme="dark"] .chat-input-area {
+    background: #1e293b;
+    border-top: 1px solid #334155;
+}
+
+.quick-actions {
+    margin-bottom: 20px;
+}
+
+.quick-action-btn {
+    margin: 5px;
+    border-radius: 20px;
+    transition: all 0.3s ease;
+}
+
+.quick-action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.typing-indicator {
+    display: none;
+    text-align: left;
+}
+
+.typing-indicator .message-bubble {
+    background: #f1f3f4;
+    color: #666;
+}
+
+/* 深色主题下的快速操作和打字指示器 */
+[data-theme="dark"] .quick-action-btn {
+    background: #334155;
+    border-color: #475569;
+    color: #e2e8f0;
+}
+
+[data-theme="dark"] .quick-action-btn:hover {
+    background: #3b82f6;
+    border-color: #3b82f6;
+    color: #ffffff;
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+}
+
+[data-theme="dark"] .typing-indicator .message-bubble {
+    background: #334155;
+    color: #94a3b8;
+    border: 1px solid #475569;
+}
+
+[data-theme="dark"] .typing-dots span {
+    background-color: #64748b;
+}
+
+.typing-dots {
+    display: inline-block;
+}
+
+.typing-dots span {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #999;
+    margin: 0 2px;
+    animation: typing 1.4s infinite ease-in-out;
+}
+
+.typing-dots span:nth-child(1) { animation-delay: -0.32s; }
+.typing-dots span:nth-child(2) { animation-delay: -0.16s; }
+
+@keyframes typing {
+    0%, 80%, 100% { transform: scale(0.8); opacity: 0.5; }
+    40% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.course-card {
+    transition: transform 0.2s ease;
+    cursor: pointer;
+}
+
+.course-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.ai-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    margin-right: 10px;
+}
+
+.user-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #007bff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    margin-left: 10px;
+}
+
+/* Markdown渲染样式 */
+.message-bubble h3,
+.message-bubble h4,
+.message-bubble h5 {
+    font-weight: 600;
+    margin-top: 12px;
+    margin-bottom: 8px;
+    line-height: 1.3;
+}
+
+.message-bubble h3 {
+    font-size: 1.1em;
+    border-bottom: 2px solid #007bff;
+    padding-bottom: 4px;
+}
+
+.message-bubble h4 {
+    font-size: 1.05em;
+}
+
+.message-bubble h5 {
+    font-size: 1em;
+}
+
+
+
+.message-bubble strong {
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.message-bubble em {
+    font-style: italic;
+    color: inherit;
+}
+
+.message-bubble code {
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 0.85em;
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid #e9ecef;
+}
+
+.message-bubble pre {
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 0.85em;
+    line-height: 1.4;
+    overflow-x: auto;
+    border: 1px solid #495057;
+}
+
+.message-bubble pre code {
+    background: none !important;
+    border: none !important;
+    padding: 0 !important;
+    color: inherit;
+}
+
+.message-bubble ul {
+    margin: 8px 0;
+    padding-left: 20px;
+}
+
+.message-bubble li {
+    margin: 2px 0;
+    list-style-type: disc;
+    line-height: 1.4;
+}
+
+.message-bubble p {
+    margin: 3px 0;
+    line-height: 1.4;
+}
+
+.message-bubble a {
+    color: #007bff;
+    transition: color 0.2s ease;
+}
+
+.message-bubble a:hover {
+    color: #0056b3;
+    text-decoration: none;
+}
+
+/* AI回复中的列表样式 */
+.message-bubble ul,
+.message-bubble ol {
+    margin: 0.5rem 0;
+    padding-left: 1.5rem;
+}
+
+.message-bubble ul li {
+    list-style-type: disc;
+    margin-bottom: 0.25rem;
+    line-height: 1.5;
+}
+
+.message-bubble ol li {
+    list-style-type: decimal;
+    margin-bottom: 0.25rem;
+    line-height: 1.5;
+}
+
+.message-bubble li {
+    color: #333;
+}
+
+/* 嵌套列表样式 */
+.message-bubble ul ul,
+.message-bubble ol ol,
+.message-bubble ul ol,
+.message-bubble ol ul {
+    margin: 0.25rem 0;
+    padding-left: 1.2rem;
+}
+
+.message-bubble ul ul li {
+    list-style-type: circle;
+}
+
+.message-bubble ul ul ul li {
+    list-style-type: square;
+}
+
+/* 全屏对话模式样式 */
+.chat-messages-fullscreen {
+    max-height: none;
+    height: 100%;
+}
+
+.chat-messages-fullscreen .message {
+    margin-bottom: 1rem;
+}
+
+.chat-messages-fullscreen .message-bubble {
+    max-width: 70%;
+    font-size: 1.1rem;
+    line-height: 1.6;
+    padding: 1rem 1.25rem;
+}
+
+.chat-messages-fullscreen .ai-avatar,
+.chat-messages-fullscreen .user-avatar {
+    width: 45px;
+    height: 45px;
+    font-size: 1.1rem;
+}
+
+/* 全屏模式按钮样式 */
+#fullscreenChatBtn {
+    transition: all 0.3s ease;
+}
+
+#fullscreenChatBtn:hover {
+    transform: scale(1.05);
+}
+
+/* 全屏模态框样式优化 */
+.modal-fullscreen .modal-content {
+    border-radius: 0;
+}
+
+.modal-fullscreen .modal-header {
+    border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+    padding: 1rem 1.5rem;
+}
+
+/* 全屏模式AI模型选择器 - 简洁版 */
+.model-selector-fullscreen .btn-model-simple {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: rgba(255, 255, 255, 0.9);
+    padding: 0.4rem 0.8rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    min-width: 90px;
+    justify-content: center;
+}
+
+.model-selector-fullscreen .btn-model-simple:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.5);
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.model-selector-fullscreen .btn-check:checked + .btn-model-simple {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.7);
+    color: white;
+    box-shadow: 0 0 12px rgba(255, 255, 255, 0.2);
+}
+
+.model-selector-fullscreen .btn-model-simple i {
+    font-size: 0.9rem;
+}
+
+.model-selector-fullscreen .btn-model-simple span {
+    font-size: 0.85rem;
+}
+
+/* 全屏快速操作栏样式 */
+.fullscreen-quick-actions {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-bottom: 1px solid #dee2e6;
+}
+
+.fullscreen-quick-actions .btn {
+    border-radius: 20px;
+    font-size: 0.85rem;
+    padding: 0.4rem 0.8rem;
+    transition: all 0.3s ease;
+}
+
+.fullscreen-quick-actions .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.fullscreen-quick-actions .btn-outline-primary:hover {
+    background: linear-gradient(135deg, #007bff, #0056b3);
+}
+
+.fullscreen-quick-actions .btn-outline-success:hover {
+    background: linear-gradient(135deg, #28a745, #1e7e34);
+}
+
+.fullscreen-quick-actions .btn-outline-info:hover {
+    background: linear-gradient(135deg, #17a2b8, #117a8b);
+}
+
+.fullscreen-quick-actions .btn-outline-warning:hover {
+    background: linear-gradient(135deg, #ffc107, #e0a800);
+}
+</style>
+{% endblock %}
+
+{% block title %}AI学习助手{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- 页面标题 -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="d-flex align-items-center">
+                <div class="ai-avatar me-3">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div>
+                    <h2 class="mb-1">AI学习助手</h2>
+                    <p class="text-muted mb-0">擅长学习辅导的google gemini模型/更适合中国宝宝体质的deepseek模型，为您提供个性化学习建议和辅导</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- 左侧：聊天界面 -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-comments me-2 text-primary"></i>智能对话
+                    </h5>
+                    <button class="btn btn-outline-primary btn-sm" id="fullscreenChatBtn" title="全屏对话">
+                        <i class="fas fa-expand"></i>
+                    </button>
+                </div>
+                <div class="card-body p-0">
+                    <!-- AI模型选择器 -->
+                    <div class="model-selector p-3 border-bottom bg-light">
+                        <h6 class="mb-2">
+                            <i class="fas fa-robot me-2"></i>选择AI模型：
+                        </h6>
+                        <div class="btn-group w-100" role="group" aria-label="AI模型选择">
+                            <input type="radio" class="btn-check" name="aiModel" id="gemini" value="gemini" checked>
+                            <label class="btn btn-gemini" for="gemini">
+                                <i class="fab fa-google me-1"></i>
+                                <strong>Gemini</strong>
+                                <small class="d-block text-muted">学习计划·方法指导</small>
+                            </label>
+
+                            <input type="radio" class="btn-check" name="aiModel" id="deepseek" value="deepseek">
+                            <label class="btn btn-deepseek" for="deepseek">
+                                <i class="fas fa-brain me-1"></i>
+                                <strong>DeepSeek</strong>
+                                <small class="d-block text-muted">联网搜索·视频推荐</small>
+                            </label>
+                        </div>
+                        <div class="mt-2">
+                            <small class="text-muted" id="modelDescription">
+                                <i class="fas fa-info-circle me-1"></i>
+                                <span id="modelDescText">Gemini：擅长制定学习计划和学习方法指导</span>
+                            </small>
+                        </div>
+                    </div>
+
+                    <!-- 快速操作按钮 -->
+                    <div class="quick-actions p-3 border-bottom">
+                        <h6 class="mb-2">快速开始：</h6>
+                        <button class="btn btn-outline-primary btn-sm quick-action-btn" data-action="study_plan">
+                            <i class="fas fa-calendar-alt me-1"></i>制定学习计划
+                        </button>
+                        <button class="btn btn-outline-success btn-sm quick-action-btn" data-action="progress_analysis">
+                            <i class="fas fa-chart-line me-1"></i>分析学习进度
+                        </button>
+                        <button class="btn btn-outline-info btn-sm quick-action-btn" data-action="study_tips">
+                            <i class="fas fa-lightbulb me-1"></i>学习方法建议
+                        </button>
+                        <button class="btn btn-outline-warning btn-sm quick-action-btn" data-action="motivation">
+                            <i class="fas fa-fire me-1"></i>学习动机激励
+                        </button>
+                    </div>
+
+                    <!-- 聊天消息区域 -->
+                    <div class="chat-messages" id="chatMessages">
+                        <div class="message ai" id="welcomeMessage">
+                            <div class="d-flex align-items-start">
+                                <div class="ai-avatar">AI</div>
+                                <div class="message-bubble" id="welcomeContent">
+                                    👋 您好！我是您的AI学习助手，当前使用 <strong>Google Gemini</strong> 模型。<br><br>
+                                    我可以帮您：<br>
+                                    📚 制定个性化学习计划<br>
+                                    📊 分析学习进度和效果<br>
+                                    💡 提供学习方法建议<br>
+                                    🎯 解答学习相关问题<br><br>
+                                    请告诉我您需要什么帮助，或者点击上方的快速操作按钮开始！
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 打字指示器 -->
+                    <div class="typing-indicator message ai" id="typingIndicator">
+                        <div class="d-flex align-items-start">
+                            <div class="ai-avatar">AI</div>
+                            <div class="message-bubble">
+                                <div class="typing-dots">
+                                    <span></span>
+                                    <span></span>
+                                    <span></span>
+                                </div>
+                                正在思考中...
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 输入区域 -->
+                    <div class="chat-input-area">
+                        <form id="chatForm">
+                            {% csrf_token %}
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="messageInput"
+                                       placeholder="输入您的问题..." maxlength="500">
+                                <input type="hidden" id="chatType" value="general">
+                                <input type="hidden" id="courseId" value="">
+                                <input type="hidden" id="aiModel" value="gemini">
+                                <button class="btn btn-primary" type="submit" id="sendButton">
+                                    <i class="fas fa-paper-plane"></i>
+                                </button>
+                            </div>
+                            <small class="text-muted">按Enter发送，Shift+Enter换行</small>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右侧：课程信息和统计 -->
+        <div class="col-lg-4">
+            <!-- 学习统计 -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-chart-pie me-2 text-success"></i>学习统计
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-4">
+                            <div class="mb-2">
+                                <i class="fas fa-book fa-2x text-primary"></i>
+                            </div>
+                            <h5 class="mb-1">{{ user_courses|length }}</h5>
+                            <small class="text-muted">总课程</small>
+                        </div>
+                        <div class="col-4">
+                            <div class="mb-2">
+                                <i class="fas fa-check-circle fa-2x text-success"></i>
+                            </div>
+                            <h5 class="mb-1">{{ recent_progress|length }}</h5>
+                            <small class="text-muted">最近完成</small>
+                        </div>
+                        <div class="col-4">
+                            <div class="mb-2">
+                                <i class="fas fa-clock fa-2x text-warning"></i>
+                            </div>
+                            <h5 class="mb-1">{{ total_study_minutes }}分钟</h5>
+                            <small class="text-muted">学习时长</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 最近课程 -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-clock me-2 text-info"></i>最近课程
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if user_courses %}
+                        {% for course in user_courses %}
+                        <div class="course-card p-2 mb-2 border rounded" 
+                             data-course-id="{{ course.id }}"
+                             onclick="selectCourse({{ course.id }}, '{{ course.custom_title|default:course.video.title|escapejs }}')">
+                            <div class="d-flex align-items-center">
+                                <img src="{{ course.video.cover }}" alt="课程封面" 
+                                     class="rounded me-2" style="width: 40px; height: 30px; object-fit: cover;">
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1 small">{{ course.custom_title|default:course.video.title|truncatechars:20 }}</h6>
+                                    <small class="text-muted">{{ course.video.author }}</small>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted text-center">
+                            <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
+                            暂无课程<br>
+                            <a href="{% url 'index' %}" class="btn btn-sm btn-outline-primary mt-2">
+                                去添加课程
+                            </a>
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 全屏AI对话模态框 -->
+<div class="modal fade" id="fullscreenChatModal" tabindex="-1" aria-labelledby="fullscreenChatModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-fullscreen">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="fullscreenChatModalLabel">
+                    <i class="fas fa-robot me-2"></i>AI学习助手 - 全屏对话
+                </h5>
+                <div class="d-flex align-items-center">
+                    <!-- AI模型切换器 - 简洁版 -->
+                    <div class="model-selector-fullscreen me-3">
+                        <div class="btn-group" role="group">
+                            <input type="radio" class="btn-check" name="fullscreenAiModel" id="fullscreenGemini" value="gemini" checked>
+                            <label class="btn btn-model-simple" for="fullscreenGemini">
+                                <i class="fab fa-google me-1"></i>
+                                <span>Gemini</span>
+                            </label>
+
+                            <input type="radio" class="btn-check" name="fullscreenAiModel" id="fullscreenDeepseek" value="deepseek">
+                            <label class="btn btn-model-simple" for="fullscreenDeepseek">
+                                <i class="fas fa-brain me-1"></i>
+                                <span>DeepSeek</span>
+                            </label>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+            </div>
+
+            <!-- 全屏模式快速操作栏 -->
+            <div class="fullscreen-quick-actions bg-light border-bottom">
+                <div class="container-fluid">
+                    <div class="d-flex align-items-center py-2">
+                        <span class="text-muted me-3 small">快速开始：</span>
+                        <button class="btn btn-outline-primary btn-sm me-2 fullscreen-quick-action-btn" data-action="study_plan">
+                            <i class="fas fa-calendar-alt me-1"></i>制定学习计划
+                        </button>
+                        <button class="btn btn-outline-success btn-sm me-2 fullscreen-quick-action-btn" data-action="progress_analysis">
+                            <i class="fas fa-chart-line me-1"></i>分析学习进度
+                        </button>
+                        <button class="btn btn-outline-info btn-sm me-2 fullscreen-quick-action-btn" data-action="study_tips">
+                            <i class="fas fa-lightbulb me-1"></i>学习方法建议
+                        </button>
+                        <button class="btn btn-outline-warning btn-sm fullscreen-quick-action-btn" data-action="motivation">
+                            <i class="fas fa-fire me-1"></i>学习动机激励
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-body p-0 d-flex flex-column" style="height: calc(100vh - 180px);">
+                <!-- 聊天消息区域 -->
+                <div class="flex-grow-1 p-3" style="overflow-y: auto; background-color: #f8f9fa;">
+                    <div class="chat-messages-fullscreen" id="chatMessagesFullscreen">
+                        <!-- 消息将在这里显示 -->
+                    </div>
+
+                    <!-- 全屏打字指示器 -->
+                    <div class="typing-indicator message ai" id="typingIndicatorFullscreen" style="display: none;">
+                        <div class="d-flex align-items-start">
+                            <div class="ai-avatar">AI</div>
+                            <div class="message-bubble">
+                                <div class="typing-dots">
+                                    <span></span>
+                                    <span></span>
+                                    <span></span>
+                                </div>
+                                正在思考中...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 输入区域 -->
+                <div class="border-top bg-white p-3">
+                    <form id="fullscreenChatForm">
+                        {% csrf_token %}
+                        <div class="input-group">
+                            <input type="text" class="form-control form-control-lg" id="fullscreenMessageInput"
+                                   placeholder="输入您的问题..." maxlength="500">
+                            <input type="hidden" id="fullscreenChatType" value="general">
+                            <input type="hidden" id="fullscreenCourseId" value="">
+                            <input type="hidden" id="fullscreenAiModelValue" value="gemini">
+                            <button class="btn btn-primary btn-lg" type="submit" id="fullscreenSendButton">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
+                        <small class="text-muted">按Enter发送，Shift+Enter换行</small>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    let selectedCourseId = '';
+    let selectedCourseName = '';
+    let isFullscreenMode = false;
+
+    // AI模型切换事件
+    $('input[name="aiModel"]').change(function() {
+        const selectedModel = $(this).val();
+        $('#aiModel').val(selectedModel);
+
+        // 更新模型描述
+        const descriptions = {
+            'gemini': 'Gemini：擅长制定学习计划和学习方法指导',
+            'deepseek': 'DeepSeek：能够联网搜索，推荐B站视频和UP主'
+        };
+        $('#modelDescText').text(descriptions[selectedModel]);
+
+        // 更新欢迎消息
+        updateWelcomeMessage(selectedModel);
+
+        // 添加模型切换提示
+        const modelNames = {
+            'gemini': 'Google Gemini',
+            'deepseek': 'DeepSeek'
+        };
+        addMessage(`已切换到 ${modelNames[selectedModel]} 模型`, 'system');
+    });
+
+    // 更新欢迎消息函数
+    function updateWelcomeMessage(model) {
+        const welcomeMessages = {
+            'gemini': `👋 您好！我是您的AI学习助手，当前使用 <strong>Google Gemini</strong> 模型。（如果和我对话时遇到网络问题，可以先检查一下是否科学上网哦）<br><br>
+                我可以帮您：<br>
+                📚 制定个性化学习计划<br>
+                📊 分析学习进度和效果<br>
+                💡 提供学习方法建议<br>
+                🎯 解答学习相关问题<br><br>
+                请告诉我您需要什么帮助，或者点击上方的快速操作按钮开始！`,
+            'deepseek': `👋 您好！我是您的AI学习助手，当前使用 <strong>DeepSeek</strong> 模型。<br><br>
+                我可以帮您：<br>
+                🔍 联网搜索最新学习资源<br>
+                📺 推荐优质B站视频和UP主<br>
+                🎓 提供中文学习内容建议<br>
+                🌟 发现热门学习频道<br><br>
+                请告诉我您需要什么帮助，我会为您搜索最合适的学习资源！`
+        };
+        $('#welcomeContent').html(welcomeMessages[model]);
+    }
+
+    // 快速操作按钮点击事件
+    $('.quick-action-btn').click(function() {
+        const action = $(this).data('action');
+        let message = '';
+        let chatType = 'general';
+
+        switch(action) {
+            case 'study_plan':
+                message = selectedCourseId ?
+                    `请为我的课程"${selectedCourseName}"制定一个详细的学习计划` :
+                    '请根据我的课程情况，帮我制定一个学习计划';
+                chatType = 'study_plan';
+                break;
+            case 'progress_analysis':
+                message = '请分析我的学习进度，给出改进建议';
+                chatType = 'progress_analysis';
+                break;
+            case 'study_tips':
+                message = '请给我一些有效的学习方法和技巧建议';
+                break;
+            case 'motivation':
+                message = '我最近学习动力不足，请给我一些激励和建议';
+                break;
+        }
+
+        $('#messageInput').val(message);
+        $('#chatType').val(chatType);
+        $('#courseId').val(selectedCourseId);
+        sendMessage();
+    });
+
+    // 表单提交事件
+    $('#chatForm').submit(function(e) {
+        e.preventDefault();
+        sendMessage();
+    });
+
+    // 回车发送消息
+    $('#messageInput').keypress(function(e) {
+        if (e.which === 13 && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
+    });
+
+    // 发送消息函数
+    function sendMessage() {
+        const message = $('#messageInput').val().trim();
+        if (!message) return;
+
+        const chatType = $('#chatType').val();
+        const courseId = $('#courseId').val();
+        const aiModel = $('#aiModel').val();
+
+        // 添加用户消息到聊天界面
+        addMessage(message, 'user');
+
+        // 清空输入框
+        $('#messageInput').val('');
+
+        // 显示打字指示器
+        showTypingIndicator();
+
+        // 发送AJAX请求
+        $.ajax({
+            url: '{% url "ai_chat" %}',
+            type: 'POST',
+            data: {
+                'message': message,
+                'type': chatType,
+                'course_id': courseId,
+                'ai_model': aiModel,
+                'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
+            },
+            success: function(response) {
+                hideTypingIndicator();
+
+                if (response.success) {
+                    addMessage(response.response, 'ai');
+                } else {
+                    addMessage('抱歉，我暂时无法回答您的问题：' + response.error + '(可能需要您魔法上网)', 'ai', true);
+                }
+
+                // 重置聊天类型
+                $('#chatType').val('general');
+                $('#courseId').val('');
+            },
+            error: function() {
+                hideTypingIndicator();
+                addMessage('网络连接出现问题，请稍后再试', 'ai', true);
+            }
+        });
+    }
+
+    // 简洁的Markdown渲染函数
+    function renderMarkdown(text) {
+        if (!text) return '';
+
+        // 先保存所有链接，避免后续处理影响
+        const links = [];
+        text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, function(match, linkText, url) {
+            const index = links.length;
+            links.push({text: linkText, url: url});
+            return `__LINK_${index}__`;
+        });
+
+        // 保存B站链接
+        const biliLinks = [];
+        text = text.replace(/(https?:\/\/(?:www\.)?bilibili\.com\/video\/[A-Za-z0-9?&=_-]+)/g, function(match, url) {
+            const index = biliLinks.length;
+            biliLinks.push(url);
+            return `__BILI_LINK_${index}__`;
+        });
+
+        // 保存BV号
+        const bvNumbers = [];
+        text = text.replace(/\b(BV[A-Za-z0-9]{10})\b/g, function(match, bv) {
+            const index = bvNumbers.length;
+            bvNumbers.push(bv);
+            return `__BV_NUMBER_${index}__`;
+        });
+
+        // 保存UP主推荐
+        const upRecommendations = [];
+        text = text.replace(/UP主[：:]\s*([^\s\n，,。.！!？?]+)/g, function(match, upName) {
+            const index = upRecommendations.length;
+            upRecommendations.push(upName);
+            return `__UP_RECOMMENDATION_${index}__`;
+        });
+
+        // 保存视频推荐
+        const videoRecommendations = [];
+        text = text.replace(/(?:推荐视频|视频)[：:]\s*([^\n]+?)(?=\n|$)/g, function(match, videoTitle) {
+            const index = videoRecommendations.length;
+            videoRecommendations.push(videoTitle.trim());
+            return `__VIDEO_RECOMMENDATION_${index}__`;
+        });
+
+        // 清理多余的格式符号和emoji
+        text = text.replace(/[🎯📚💡🔥⭐🌟✨🚀📱💻🎨🎪🎭🎨]/g, '');
+
+        // 转义HTML特殊字符
+        text = text.replace(/&/g, '&amp;')
+                  .replace(/</g, '&lt;')
+                  .replace(/>/g, '&gt;');
+
+        // 处理表格
+        text = processSimpleTable(text);
+
+        // 处理标题 (支持1-6级标题)
+        text = text.replace(/^#{6}\s+(.+)$/gm, '<h6 class="mt-2 mb-1 text-primary">$1</h6>');
+        text = text.replace(/^#{5}\s+(.+)$/gm, '<h5 class="mt-2 mb-1 text-primary">$1</h5>');
+        text = text.replace(/^#{4}\s+(.+)$/gm, '<h4 class="mt-2 mb-1 text-primary">$1</h4>');
+        text = text.replace(/^#{3}\s+(.+)$/gm, '<h3 class="mt-3 mb-2 text-primary fw-bold">$1</h3>');
+        text = text.replace(/^#{2}\s+(.+)$/gm, '<h2 class="mt-3 mb-2 text-primary fw-bold">$1</h2>');
+        text = text.replace(/^#{1}\s+(.+)$/gm, '<h1 class="mt-3 mb-2 text-primary fw-bold">$1</h1>');
+
+        // 处理水平分隔线
+        text = text.replace(/^---+$/gm, '<hr class="my-3">');
+
+        // 处理列表
+        text = processSimpleList(text);
+
+        // 处理代码块
+        text = text.replace(/```[\s\S]*?```/g, function(match) {
+            const code = match.replace(/```/g, '').trim();
+            return `<pre class="bg-dark text-light p-3 rounded mt-2 mb-2"><code>${code}</code></pre>`;
+        });
+
+        // 处理行内代码
+        text = text.replace(/`([^`]+)`/g, '<code class="bg-light text-danger px-2 py-1 rounded">$1</code>');
+
+        // 处理粗体和斜体
+        text = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+        text = text.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+
+        // 恢复所有链接 - 确保URL正确
+        links.forEach((link, index) => {
+            // 清理和验证URL
+            let url = link.url.trim();
+
+            // 处理各种URL格式
+            if (url.startsWith('//')) {
+                url = 'https:' + url;
+            } else if (!url.startsWith('http://') && !url.startsWith('https://') && !url.startsWith('mailto:') && !url.startsWith('tel:')) {
+                // 如果看起来像域名，添加https://
+                if (url.includes('.') && !url.startsWith('/')) {
+                    url = 'https://' + url;
+                }
+            }
+
+            text = text.replace(`__LINK_${index}__`, `<a href="${url}" target="_blank" class="text-primary text-decoration-underline">${link.text}</a>`);
+        });
+
+        biliLinks.forEach((url, index) => {
+            text = text.replace(`__BILI_LINK_${index}__`, `<a href="${url}" target="_blank" class="text-primary text-decoration-underline">观看视频</a>`);
+        });
+
+        bvNumbers.forEach((bv, index) => {
+            text = text.replace(`__BV_NUMBER_${index}__`, `<a href="https://www.bilibili.com/video/${bv}" target="_blank" class="text-primary text-decoration-underline">${bv}</a>`);
+        });
+
+        upRecommendations.forEach((upName, index) => {
+            const searchUrl = `https://search.bilibili.com/upuser?keyword=${encodeURIComponent(upName)}`;
+            text = text.replace(`__UP_RECOMMENDATION_${index}__`, `UP主：<a href="${searchUrl}" target="_blank" class="text-primary text-decoration-underline">${upName}</a>`);
+        });
+
+        videoRecommendations.forEach((videoTitle, index) => {
+            const searchUrl = `https://search.bilibili.com/all?keyword=${encodeURIComponent(videoTitle)}`;
+            text = text.replace(`__VIDEO_RECOMMENDATION_${index}__`, `视频：<a href="${searchUrl}" target="_blank" class="text-primary text-decoration-underline">${videoTitle}</a>`);
+        });
+
+        // 处理段落和换行 - 减少间距
+        text = text.replace(/\n\s*\n/g, '</p><p class="mb-1">');
+        text = text.replace(/\n/g, '<br>');
+
+        // 包装段落 - 减少间距
+        if (text && !text.match(/^<[h1-6|hr|ul|ol|table|pre]/)) {
+            text = '<p class="mb-1">' + text + '</p>';
+        }
+
+        return text;
+    }
+
+    // 测试Markdown渲染的函数
+    function testMarkdownRender() {
+        const testText = "这是一个测试链接：[百度](https://www.baidu.com)";
+        const result = renderMarkdown(testText);
+        console.log('测试输入:', testText);
+        console.log('测试输出:', result);
+        return result;
+    }
+
+
+
+    // 简单的表格处理函数
+    function processSimpleTable(text) {
+        const lines = text.split('\n');
+        const result = [];
+        let inTable = false;
+
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i].trim();
+
+            // 检查是否是表格分隔行 |---|---|
+            if (line.match(/^\|?[\s]*:?-+:?[\s]*(\|[\s]*:?-+:?[\s]*)*\|?$/)) {
+                if (i > 0 && result.length > 0) {
+                    // 前一行应该是表头
+                    const headerLine = result.pop();
+                    const headers = headerLine.split('|').map(h => h.trim()).filter(h => h);
+
+                    let tableHtml = '<table class="table table-striped table-bordered mt-2 mb-2"><thead><tr>';
+                    headers.forEach(header => {
+                        tableHtml += `<th>${header}</th>`;
+                    });
+                    tableHtml += '</tr></thead><tbody>';
+
+                    result.push(tableHtml);
+                    inTable = true;
+                }
+                continue;
+            }
+
+            // 检查是否是表格行
+            if (inTable && line.match(/^\|.*\|$/)) {
+                const cells = line.split('|').map(c => c.trim()).filter(c => c);
+                let rowHtml = '<tr>';
+                cells.forEach(cell => {
+                    rowHtml += `<td>${cell}</td>`;
+                });
+                rowHtml += '</tr>';
+                result.push(rowHtml);
+                continue;
+            }
+
+            // 如果不是表格行且之前在表格中，结束表格
+            if (inTable && !line.match(/^\|.*\|$/)) {
+                result.push('</tbody></table>');
+                inTable = false;
+            }
+
+            result.push(lines[i]);
+        }
+
+        // 如果最后还在表格中，关闭表格
+        if (inTable) {
+            result.push('</tbody></table>');
+        }
+
+        return result.join('\n');
+    }
+
+    // 简单的列表处理函数
+    function processSimpleList(text) {
+        const lines = text.split('\n');
+        const result = [];
+        let inList = false;
+        let listType = null;
+
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+            const trimmedLine = line.trim();
+
+            // 检查无序列表项
+            const unorderedMatch = trimmedLine.match(/^[\*\-]\s+(.+)$/);
+            // 检查有序列表项
+            const orderedMatch = trimmedLine.match(/^(\d+)\.\s+(.+)$/);
+
+            if (unorderedMatch) {
+                if (!inList || listType !== 'ul') {
+                    if (inList) result.push(`</${listType}>`);
+                    result.push('<ul class="mb-2">');
+                    inList = true;
+                    listType = 'ul';
+                }
+                result.push(`<li>${unorderedMatch[1]}</li>`);
+            } else if (orderedMatch) {
+                if (!inList || listType !== 'ol') {
+                    if (inList) result.push(`</${listType}>`);
+                    result.push('<ol class="mb-2">');
+                    inList = true;
+                    listType = 'ol';
+                }
+                result.push(`<li>${orderedMatch[2]}</li>`);
+            } else {
+                if (inList) {
+                    result.push(`</${listType}>`);
+                    inList = false;
+                    listType = null;
+                }
+                result.push(line);
+            }
+        }
+
+        if (inList) {
+            result.push(`</${listType}>`);
+        }
+
+        return result.join('\n');
+    }
+
+    // 添加消息到聊天界面
+    function addMessage(text, sender, isError = false) {
+        const chatMessages = $('#chatMessages');
+
+        // 处理系统消息
+        if (sender === 'system') {
+            const systemMessageHtml = `
+                <div class="message system text-center my-2">
+                    <small class="badge bg-secondary">
+                        <i class="fas fa-info-circle me-1"></i>${text}
+                    </small>
+                </div>
+            `;
+            chatMessages.append(systemMessageHtml);
+            chatMessages.scrollTop(chatMessages[0].scrollHeight);
+            return;
+        }
+
+        const messageClass = sender === 'user' ? 'user' : 'ai';
+        const avatar = sender === 'user' ?
+            '<div class="user-avatar">我</div>' :
+            '<div class="ai-avatar">AI</div>';
+
+        const alignClass = sender === 'user' ? 'justify-content-end' : 'justify-content-start';
+        const bubbleClass = isError ? 'bg-danger text-white' : '';
+
+        // 对AI回复进行Markdown渲染
+        let processedText = text;
+        if (sender === 'ai' && !isError) {
+            processedText = renderMarkdown(text);
+        }
+
+        const messageHtml = `
+            <div class="message ${messageClass}">
+                <div class="d-flex align-items-start ${alignClass}">
+                    ${sender === 'ai' ? avatar : ''}
+                    <div class="message-bubble ${bubbleClass}" style="${sender === 'user' ? 'white-space: pre-wrap;' : ''}">${processedText}</div>
+                    ${sender === 'user' ? avatar : ''}
+                </div>
+            </div>
+        `;
+
+        chatMessages.append(messageHtml);
+        chatMessages.scrollTop(chatMessages[0].scrollHeight);
+    }
+
+    // 显示打字指示器
+    function showTypingIndicator() {
+        if (isFullscreenMode) {
+            $('#typingIndicatorFullscreen').show();
+            const chatMessages = $('#chatMessagesFullscreen');
+            chatMessages.scrollTop(chatMessages[0].scrollHeight);
+        } else {
+            $('#typingIndicator').show();
+            const chatMessages = $('#chatMessages');
+            chatMessages.scrollTop(chatMessages[0].scrollHeight);
+        }
+    }
+
+    // 隐藏打字指示器
+    function hideTypingIndicator() {
+        if (isFullscreenMode) {
+            $('#typingIndicatorFullscreen').hide();
+        } else {
+            $('#typingIndicator').hide();
+        }
+    }
+
+    // 全屏对话功能
+    $('#fullscreenChatBtn').click(function() {
+        // 同步当前对话内容到全屏模式
+        const currentMessages = $('#chatMessages').html();
+        $('#chatMessagesFullscreen').html(currentMessages);
+
+        // 同步AI模型选择
+        const currentModel = $('input[name="aiModel"]:checked').val();
+        $(`input[name="fullscreenAiModel"][value="${currentModel}"]`).prop('checked', true);
+        $('#fullscreenAiModelValue').val(currentModel);
+
+        // 同步选中的课程信息到全屏模式
+        $('#fullscreenCourseId').val(selectedCourseId);
+
+        // 显示全屏模态框
+        $('#fullscreenChatModal').modal('show');
+
+        // 滚动到底部
+        setTimeout(function() {
+            const fullscreenMessages = $('#chatMessagesFullscreen');
+            fullscreenMessages.scrollTop(fullscreenMessages[0].scrollHeight);
+        }, 300);
+    });
+
+    // 全屏模式下的AI模型切换
+    $('input[name="fullscreenAiModel"]').change(function() {
+        const selectedModel = $(this).val();
+        $('#fullscreenAiModelValue').val(selectedModel);
+
+        // 同步到主界面
+        $(`input[name="aiModel"][value="${selectedModel}"]`).prop('checked', true);
+        $('#aiModel').val(selectedModel);
+
+        // 更新主界面的欢迎消息
+        updateWelcomeMessage(selectedModel);
+
+        // 添加模型切换提示到全屏模式
+        const modelNames = {
+            'gemini': 'Google Gemini',
+            'deepseek': 'DeepSeek'
+        };
+        addMessageFullscreen(`已切换到 ${modelNames[selectedModel]} 模型`, 'system');
+    });
+
+    // 全屏模式表单提交
+    $('#fullscreenChatForm').submit(function(e) {
+        e.preventDefault();
+        sendMessageFullscreen();
+    });
+
+    // 全屏模式回车发送
+    $('#fullscreenMessageInput').keypress(function(e) {
+        if (e.which === 13 && !e.shiftKey) {
+            e.preventDefault();
+            sendMessageFullscreen();
+        }
+    });
+
+    // 全屏模式快速操作按钮点击事件
+    $('.fullscreen-quick-action-btn').click(function() {
+        const action = $(this).data('action');
+        let message = '';
+        let chatType = 'general';
+
+        switch(action) {
+            case 'study_plan':
+                message = selectedCourseId ?
+                    `请为我的课程"${selectedCourseName}"制定一个详细的学习计划` :
+                    '请根据我的课程情况，帮我制定一个学习计划';
+                chatType = 'study_plan';
+                break;
+            case 'progress_analysis':
+                message = '请分析我的学习进度，给出改进建议';
+                chatType = 'progress_analysis';
+                break;
+            case 'study_tips':
+                message = '请给我一些有效的学习方法和技巧建议';
+                break;
+            case 'motivation':
+                message = '我最近学习动力不足，请给我一些激励和建议';
+                break;
+        }
+
+        $('#fullscreenMessageInput').val(message);
+        $('#fullscreenChatType').val(chatType);
+        $('#fullscreenCourseId').val(selectedCourseId);
+        sendMessageFullscreen();
+    });
+
+    // 全屏模式发送消息函数
+    function sendMessageFullscreen() {
+        const message = $('#fullscreenMessageInput').val().trim();
+        if (!message) return;
+
+        const chatType = $('#fullscreenChatType').val();
+        const courseId = $('#fullscreenCourseId').val();
+        const aiModel = $('#fullscreenAiModelValue').val();
+
+        // 设置全屏模式标志
+        isFullscreenMode = true;
+
+        // 添加用户消息到全屏聊天界面
+        addMessageFullscreen(message, 'user');
+
+        // 清空输入框
+        $('#fullscreenMessageInput').val('');
+
+        // 显示打字指示器
+        showTypingIndicator();
+
+        // 发送AJAX请求
+        $.ajax({
+            url: '{% url "ai_chat" %}',
+            type: 'POST',
+            data: {
+                'message': message,
+                'type': chatType,
+                'course_id': courseId,
+                'ai_model': aiModel,
+                'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
+            },
+            success: function(response) {
+                hideTypingIndicator();
+
+                if (response.success) {
+                    addMessageFullscreen(response.response, 'ai');
+                } else {
+                    addMessageFullscreen('抱歉，我暂时无法回答您的问题：' + response.error + '(可能需要您魔法上网)', 'ai', true);
+                }
+
+                // 重置聊天类型
+                $('#fullscreenChatType').val('general');
+                $('#fullscreenCourseId').val('');
+            },
+            error: function() {
+                hideTypingIndicator();
+                addMessageFullscreen('网络连接出现问题，请稍后再试', 'ai', true);
+            },
+            complete: function() {
+                // 重置全屏模式标志
+                isFullscreenMode = false;
+            }
+        });
+    }
+
+    // 全屏模式添加消息函数
+    function addMessageFullscreen(text, sender, isError = false) {
+        const chatMessages = $('#chatMessagesFullscreen');
+
+        // 处理系统消息
+        if (sender === 'system') {
+            const systemMessageHtml = `
+                <div class="message system text-center my-2">
+                    <small class="badge bg-secondary">
+                        <i class="fas fa-info-circle me-1"></i>${text}
+                    </small>
+                </div>
+            `;
+            chatMessages.append(systemMessageHtml);
+            chatMessages.scrollTop(chatMessages[0].scrollHeight);
+            return;
+        }
+
+        const messageClass = sender === 'user' ? 'user' : 'ai';
+        const avatar = sender === 'user' ?
+            '<div class="user-avatar">我</div>' :
+            '<div class="ai-avatar">AI</div>';
+
+        const alignClass = sender === 'user' ? 'justify-content-end' : '';
+        const bubbleClass = sender === 'user' ? 'user-bubble' : (isError ? 'ai-bubble-error' : 'ai-bubble');
+
+        // 处理AI消息的Markdown渲染
+        const processedText = sender === 'ai' ? renderMarkdown(text) : text;
+
+        const messageHtml = `
+            <div class="message ${messageClass}">
+                <div class="d-flex align-items-start ${alignClass}">
+                    ${sender === 'ai' ? avatar : ''}
+                    <div class="message-bubble ${bubbleClass}" style="${sender === 'user' ? 'white-space: pre-wrap;' : ''}">${processedText}</div>
+                    ${sender === 'user' ? avatar : ''}
+                </div>
+            </div>
+        `;
+
+        chatMessages.append(messageHtml);
+        chatMessages.scrollTop(chatMessages[0].scrollHeight);
+
+        // 同步到主界面
+        addMessage(text, sender, isError);
+    }
+
+    // 模态框关闭时同步消息到主界面
+    $('#fullscreenChatModal').on('hidden.bs.modal', function() {
+        const fullscreenMessages = $('#chatMessagesFullscreen').html();
+        $('#chatMessages').html(fullscreenMessages);
+
+        // 滚动到底部
+        const chatMessages = $('#chatMessages');
+        chatMessages.scrollTop(chatMessages[0].scrollHeight);
+    });
+});
+
+// 选择课程函数
+function selectCourse(courseId, courseName) {
+    // 移除之前的选中状态
+    $('.course-card').removeClass('border-primary bg-light');
+
+    // 添加选中状态
+    $(`[data-course-id="${courseId}"]`).addClass('border-primary bg-light');
+
+    // 更新全局变量
+    window.selectedCourseId = courseId;
+    window.selectedCourseName = courseName;
+
+    // 更新隐藏字段
+    $('#courseId').val(courseId);
+
+    // 显示选中提示
+    const chatMessages = $('#chatMessages');
+    const messageHtml = `
+        <div class="message ai">
+            <div class="d-flex align-items-start">
+                <div class="ai-avatar">AI</div>
+                <div class="message-bubble bg-info text-white">
+                    已选择课程：${courseName}<br>
+                    现在我可以为这门课程提供更精准的学习建议了！
+                </div>
+            </div>
+        </div>
+    `;
+    chatMessages.append(messageHtml);
+    chatMessages.scrollTop(chatMessages[0].scrollHeight);
+}
+</script>
+{% endblock %}

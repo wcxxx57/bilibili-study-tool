@@ -1,0 +1,354 @@
+{% extends 'bilistudy/base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'bilistudy/css/custom-styles.css' %}">
+<style>
+.plan-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border: none;
+    border-radius: 12px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.plan-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.plan-card .card-body {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+}
+
+.plan-card .card-actions {
+    margin-top: auto;
+    padding-top: 1rem;
+}
+
+/* 确保卡片内容区域的一致性 */
+.plan-card .card-body {
+    min-height: 400px;
+}
+
+.plan-card .card-title {
+    min-height: 2.5rem;
+    display: flex;
+    align-items: center;
+}
+
+.plan-card .focus-modules {
+    min-height: 2rem;
+}
+
+.plan-status {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.8em;
+    font-weight: 600;
+}
+
+.status-active {
+    background: #d4edda;
+    color: #155724;
+}
+
+.status-completed {
+    background: #cce7ff;
+    color: #004085;
+}
+
+.status-overdue {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.progress-circle {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    color: white;
+    margin-right: 15px;
+}
+
+.stats-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 15px;
+    padding: 25px;
+    margin-bottom: 30px;
+}
+
+.stat-item {
+    text-align: center;
+}
+
+.stat-number {
+    font-size: 2.5rem;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #6c757d;
+}
+
+.empty-state i {
+    font-size: 4rem;
+    margin-bottom: 20px;
+    opacity: 0.5;
+}
+</style>
+{% endblock %}
+
+{% block title %}我的计划{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    {% csrf_token %}
+    <!-- 页面标题 -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <h2 class="mb-1">
+                        <i class="fas fa-calendar-alt me-2 text-primary"></i>我的计划
+                    </h2>
+                    <p class="text-muted mb-0">管理和跟踪您的学习计划</p>
+                </div>
+                <a href="{% url 'course_list' %}" class="btn btn-primary">
+                    <i class="fas fa-plus me-1"></i>添加新计划
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 统计卡片 -->
+    <div class="stats-card">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="stat-item">
+                    <div class="stat-number">{{ total_plans }}</div>
+                    <div class="stat-label">总计划数</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stat-item">
+                    <div class="stat-number">{{ completed_plans }}</div>
+                    <div class="stat-label">已完成</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stat-item">
+                    <div class="stat-number">{{ overdue_plans }}</div>
+                    <div class="stat-label">已超期</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 计划列表 -->
+    {% if plans %}
+        <div class="row">
+            {% for plan in plans %}
+            <div class="col-lg-6 col-xl-4 mb-4">
+                <div class="card plan-card h-100 position-relative">
+                    <!-- 状态标签 -->
+                    {% if plan.progress_percentage >= 100 %}
+                        <span class="plan-status status-completed">已完成</span>
+                    {% elif plan.is_overdue %}
+                        <span class="plan-status status-overdue">已超期</span>
+                    {% else %}
+                        <span class="plan-status status-active">进行中</span>
+                    {% endif %}
+
+                    <div class="card-body">
+                        <!-- 课程信息 -->
+                        <div class="d-flex align-items-start mb-3">
+                            <img src="{{ plan.user_course.video.cover }}" 
+                                 alt="课程封面" 
+                                 class="rounded me-3" 
+                                 style="width: 60px; height: 45px; object-fit: cover;">
+                            <div class="flex-grow-1">
+                                <h6 class="card-title mb-1">
+                                    {{ plan.user_course.custom_title|default:plan.user_course.video.title|truncatechars:30 }}
+                                </h6>
+                                <small class="text-muted">{{ plan.user_course.video.author }}</small>
+                            </div>
+                        </div>
+
+                        <!-- 进度信息 -->
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="progress-circle" 
+                                 style="background: {% if plan.progress_percentage >= 100 %}#28a745{% elif plan.is_overdue %}#dc3545{% else %}#007bff{% endif %};">
+                                {{ plan.progress_percentage|floatformat:0 }}%
+                            </div>
+                            <div>
+                                <div class="fw-bold">第{{ plan.days_passed }}天 / {{ plan.total_days }}天</div>
+                                <small class="text-muted">每天{{ plan.daily_minutes }}分钟</small>
+                            </div>
+                        </div>
+
+                        <!-- 重点模块 -->
+                        <div class="mb-3 focus-modules">
+                            {% if plan.focus_modules %}
+                                <small class="text-muted d-block">重点学习：</small>
+                                <span class="badge bg-light text-dark">{{ plan.focus_modules|truncatechars:20 }}</span>
+                            {% else %}
+                                <small class="text-muted d-block">&nbsp;</small>
+                            {% endif %}
+                        </div>
+
+                        <!-- 时间信息 -->
+                        <div class="row text-center mb-3">
+                            <div class="col-6">
+                                <small class="text-muted d-block">开始日期</small>
+                                <strong>{{ plan.start_date|date:"m/d" }}</strong>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted d-block">预期完成</small>
+                                <strong>{{ plan.expected_end_date|date:"m/d" }}</strong>
+                            </div>
+                        </div>
+
+                        <!-- 操作按钮 -->
+                        <div class="card-actions">
+                            <div class="d-grid gap-2">
+                                <a href="{% url 'plan_detail' plan.id %}" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-eye me-1"></i>查看详情
+                                </a>
+                                <button type="button" class="btn btn-outline-danger btn-sm"
+                                        onclick="deletePlan({{ plan.id }}, '{{ plan.user_course.custom_title|default:plan.user_course.video.title|escapejs }}')">
+                                    <i class="fas fa-trash me-1"></i>删除计划
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <!-- 空状态 -->
+        <div class="empty-state">
+            <i class="fas fa-calendar-plus"></i>
+            <h4>还没有学习计划</h4>
+            <p class="mb-4">开始制定您的第一个学习计划，让学习更有条理！</p>
+            <a href="{% url 'course_list' %}" class="btn btn-primary btn-lg">
+                <i class="fas fa-plus me-2"></i>创建学习计划
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+<!-- 删除确认模态框 -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle me-2"></i>确认删除
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center">
+                    <i class="fas fa-trash-alt fa-3x text-danger mb-3"></i>
+                    <h5>确定要删除这个学习计划吗？</h5>
+                    <p class="text-muted mb-0">
+                        课程：<strong id="deletePlanTitle"></strong>
+                    </p>
+                    <p class="text-muted small mt-2">
+                        <i class="fas fa-exclamation-circle me-1"></i>
+                        删除后将无法恢复，包括所有学习记录和进度数据
+                    </p>
+                </div>
+                <input type="hidden" id="deletePlanId">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-danger" onclick="confirmDelete()">
+                    <i class="fas fa-trash me-1"></i>确认删除
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // 计划卡片悬停效果
+    $('.plan-card').hover(
+        function() {
+            $(this).find('.card-body').addClass('shadow-sm');
+        },
+        function() {
+            $(this).find('.card-body').removeClass('shadow-sm');
+        }
+    );
+});
+
+// 删除计划函数
+function deletePlan(planId, planTitle) {
+    $('#deletePlanId').val(planId);
+    $('#deletePlanTitle').text(planTitle);
+    $('#deleteConfirmModal').modal('show');
+}
+
+// 确认删除函数
+function confirmDelete() {
+    const planId = $('#deletePlanId').val();
+
+    if (!planId) {
+        alert('计划ID无效');
+        return;
+    }
+
+    // 显示加载状态
+    const deleteBtn = $('#deleteConfirmModal .btn-danger');
+    const originalText = deleteBtn.html();
+    deleteBtn.html('<i class="fas fa-spinner fa-spin me-1"></i>删除中...').prop('disabled', true);
+
+    // 发送删除请求
+    $.ajax({
+        url: '/plan/' + planId + '/delete/',
+        type: 'POST',
+        data: {
+            'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
+        },
+        success: function(response) {
+            $('#deleteConfirmModal').modal('hide');
+            alert('学习计划已删除');
+            location.reload(); // 刷新页面
+        },
+        error: function(xhr, status, error) {
+            console.error('删除失败:', error);
+            alert('删除失败，请稍后再试');
+
+            // 恢复按钮状态
+            deleteBtn.html(originalText).prop('disabled', false);
+        }
+    });
+}
+</script>
+{% endblock %}

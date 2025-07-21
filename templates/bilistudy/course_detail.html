@@ -1,0 +1,360 @@
+{% extends 'bilistudy/base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'bilistudy/css/custom-styles.css' %}">
+<style>
+/* 防止模态框闪烁的样式 */
+.modal {
+    transition: opacity 0.15s linear;
+}
+
+.modal.fade .modal-dialog {
+    transition: transform 0.15s ease-out;
+    transform: translate(0, -50px);
+}
+
+.modal.show .modal-dialog {
+    transform: none;
+}
+
+/* 防止按钮重复点击 */
+.btn[disabled] {
+    pointer-events: none;
+}
+</style>
+{% endblock %}
+
+{% block title %}{{ course.custom_title|default:course.video.title }} - 学习进度{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'index' %}">首页</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'course_list' %}">我的课程</a></li>
+                <li class="breadcrumb-item active">{{ course.custom_title|default:course.video.title }}</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3 class="card-title mb-0">{{ course.custom_title|default:course.video.title }}</h3>
+                    <div class="d-flex gap-2">
+                        {% if study_plan %}
+                        <a href="{% url 'plan_detail' study_plan.id %}" class="btn btn-success">
+                            <i class="fas fa-calendar-check me-1"></i> 查看学习计划
+                        </a>
+                        {% else %}
+                        <a href="{% url 'create_study_plan' course.id %}" class="btn btn-outline-success">
+                            <i class="fas fa-plus me-1"></i> 创建学习计划
+                        </a>
+                        {% endif %}
+                        <a href="https://www.bilibili.com/video/{{ course.video.bvid }}" target="_blank" class="btn btn-outline-primary">
+                            <i class="fas fa-external-link-alt me-1"></i> 在B站观看
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <img src="{{ course.video.cover }}" alt="{{ course.video.title }}" class="img-fluid rounded">
+                    </div>
+                    <div class="col-md-8">
+                        {% if course.custom_title and course.custom_title != course.video.title %}
+                        <p><i class="fas fa-tag text-primary me-2"></i> 原标题: {{ course.video.title }}</p>
+                        {% endif %}
+                        <p><i class="fas fa-user text-primary me-2"></i> UP主: {{ course.video.author }}</p>
+                        <p><i class="fas fa-calendar text-success me-2"></i> 添加时间: {{ course.add_time|date:"Y-m-d H:i" }}</p>
+                        <p><i class="fas fa-list-ol text-info me-2"></i> 分集数: {{ progress|length }}</p>
+                        
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span>总体进度</span>
+                                <span class="text-muted">{{ completion_rate }}%</span>
+                            </div>
+                            <div class="progress" style="height: 10px;">
+                                <div class="progress-bar main-progress-bar" role="progressbar"
+                                     style="width: {{ completion_rate }}%"
+                                     aria-valuenow="{{ completion_rate }}" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                        </div>
+                        
+
+                    </div>
+                </div>
+
+                
+                <h4 class="mb-3">学习进度</h4>
+                
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <button id="checkAllBtn" class="btn btn-sm btn-outline-success me-2">
+                            <i class="fas fa-check-square me-1"></i> 全部标记为已完成
+                        </button>
+                        <button id="uncheckAllBtn" class="btn btn-sm btn-outline-secondary">
+                            <i class="fas fa-square me-1"></i> 全部标记为未完成
+                        </button>
+                    </div>
+                    <button id="saveProgressBtn" class="btn btn-sm btn-bili" style="display: none;">
+                        <i class="fas fa-save me-1"></i> 保存进度
+                    </button>
+                </div>
+                
+                <div class="list-group mb-3">
+                    {% for item in progress %}
+                    <div class="list-group-item">
+                        <div class="d-flex align-items-center">
+                            <div class="form-check custom-checkbox">
+                                <input class="form-check-input progress-checkbox" type="checkbox" 
+                                       id="progress{{ item.id }}" 
+                                       data-id="{{ item.id }}" 
+                                       {% if item.is_completed %}checked{% endif %}>
+                                <label class="form-check-label" for="progress{{ item.id }}">
+                                    <span class="badge bg-secondary me-2">P{{ item.episode.order }}</span>
+                                    {{ item.episode.title }}
+                                </label>
+                            </div>
+                            <div class="ms-auto text-muted duration-display" data-duration="{{ item.episode.duration }}">
+                                {{ item.episode.duration }}秒
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card mb-4">
+            <div class="card-header bg-light">
+                <h5 class="card-title mb-0">课程操作</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="https://www.bilibili.com/video/{{ course.video.bvid }}" target="_blank" class="btn btn-outline-primary">
+                        <i class="fas fa-play-circle me-1"></i> 观看视频
+                    </a>
+                    <form action="{% url 'remove_course' course.id %}" method="post">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline-danger w-100" 
+                                onclick="return confirm('确定要从课程列表中移除《{{ course.custom_title|default:course.video.title }}》吗？')">
+                            <i class="fas fa-trash-alt me-1"></i> 从课程列表移除
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header bg-light">
+                <h5 class="card-title mb-0">学习提示</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <i class="fas fa-lightbulb text-warning me-2"></i>
+                    <span>完成一个视频后立即标记，增加成就感</span>
+                </div>
+                <div class="mb-3">
+                    <i class="fas fa-clock text-info me-2"></i>
+                    <span>定期回顾已学内容，巩固知识点</span>
+                </div>
+                <div>
+                    <i class="fas fa-robot text-primary me-2"></i>
+                    <span>合理安排学习计划，提高学习效率</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // 初始化复选框的原始状态
+        $('.progress-checkbox').each(function() {
+            $(this).data('original-state', $(this).is(':checked'));
+        });
+
+        // 监听复选框变化
+        $('.progress-checkbox').change(function() {
+            const checkbox = $(this);
+            const isChecked = checkbox.is(':checked');
+            const wasChecked = checkbox.data('original-state') === true;
+
+            // 如果是取消勾选已完成的分集，需要确认
+            if (wasChecked && !isChecked) {
+                if (!confirm('取消勾选后，对应的学习记录也会取消，确认取消吗？')) {
+                    // 用户取消操作，恢复勾选状态
+                    checkbox.prop('checked', true);
+                    return;
+                }
+            }
+
+            // 更新原始状态
+            checkbox.data('original-state', isChecked);
+
+            $('#saveProgressBtn').show();
+            // 实时更新进度条
+            updateProgressBar();
+        });
+        
+        // 全选按钮
+        $('#checkAllBtn').click(function() {
+            $('.progress-checkbox').prop('checked', true);
+            $('#saveProgressBtn').show();
+            updateProgressBar();
+        });
+
+        // 全不选按钮
+        $('#uncheckAllBtn').click(function() {
+            $('.progress-checkbox').prop('checked', false);
+            $('#saveProgressBtn').show();
+            updateProgressBar();
+        });
+        
+        // 保存进度
+        $('#saveProgressBtn').click(function() {
+            var progressUpdates = [];
+            
+            $('.progress-checkbox').each(function() {
+                var progressId = $(this).data('id');
+                var isCompleted = $(this).prop('checked');
+                
+                progressUpdates.push({
+                    id: progressId,
+                    completed: isCompleted
+                });
+            });
+            
+            // 批量更新
+            var progressIds = progressUpdates.map(function(item) {
+                return item.id;
+            });
+            
+            // 分别处理已完成和未完成的进度
+            var completedIds = progressUpdates.filter(function(item) {
+                return item.completed;
+            }).map(function(item) {
+                return item.id;
+            });
+            
+            var uncompletedIds = progressUpdates.filter(function(item) {
+                return !item.completed;
+            }).map(function(item) {
+                return item.id;
+            });
+            
+            // 更新已完成的进度
+            if (completedIds.length > 0) {
+                $.ajax({
+                    url: '{% url "batch_update_progress" %}',
+                    type: 'POST',
+                    data: {
+                        'progress_ids[]': completedIds,
+                        'is_completed': 'true',
+                        'csrfmiddlewaretoken': '{{ csrf_token }}'
+                    },
+                    success: function(response) {
+                        console.log('已完成进度更新成功');
+                        if (response.completion_rate !== undefined) {
+                            updateProgressBarWithData(response.completion_rate, response.completed_count, response.total_count);
+                        } else {
+                            updateProgressBar();
+                        }
+                    }
+                });
+            }
+            
+            // 更新未完成的进度
+            if (uncompletedIds.length > 0) {
+                $.ajax({
+                    url: '{% url "batch_update_progress" %}',
+                    type: 'POST',
+                    data: {
+                        'progress_ids[]': uncompletedIds,
+                        'is_completed': 'false',
+                        'csrfmiddlewaretoken': '{{ csrf_token }}'
+                    },
+                    success: function(response) {
+                        console.log('未完成进度更新成功');
+                        if (response.completion_rate !== undefined) {
+                            updateProgressBarWithData(response.completion_rate, response.completed_count, response.total_count);
+                        } else {
+                            updateProgressBar();
+                        }
+                    }
+                });
+            }
+            
+            // 显示成功消息
+            $('body').append('<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 5">' +
+                '<div class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">' +
+                '<div class="d-flex">' +
+                '<div class="toast-body"><i class="fas fa-check-circle me-2"></i> 学习进度已保存</div>' +
+                '<button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>' +
+                '</div></div></div>');
+            
+            var toast = new bootstrap.Toast($('.toast'));
+            toast.show();
+            
+            // 隐藏保存按钮
+            $('#saveProgressBtn').hide();
+        });
+    });
+
+    // 格式化时长显示
+    function formatDuration(seconds) {
+        if (seconds >= 60) {
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = seconds % 60;
+            if (remainingSeconds > 0) {
+                return minutes + '分' + remainingSeconds + '秒';
+            } else {
+                return minutes + '分钟';
+            }
+        } else {
+            return seconds + '秒';
+        }
+    }
+
+    // 使用服务器数据更新进度条
+    function updateProgressBarWithData(completionRate, completedCount, totalCount) {
+        // 更新主进度条
+        $('.main-progress-bar').css('width', completionRate + '%').attr('aria-valuenow', completionRate);
+
+        // 更新进度文字 - 查找包含"总体进度"的元素
+        $('.main-progress-bar').closest('.progress').prev().find('.text-muted').text(completionRate + '%');
+
+        console.log(`进度更新: ${completedCount}/${totalCount} = ${completionRate}%`);
+    }
+
+    // 更新进度条（客户端计算）
+    function updateProgressBar() {
+        const totalEpisodes = $('.progress-checkbox').length;
+        const completedEpisodes = $('.progress-checkbox:checked').length;
+        const completionRate = totalEpisodes > 0 ? Math.round((completedEpisodes / totalEpisodes) * 100) : 0;
+
+        updateProgressBarWithData(completionRate, completedEpisodes, totalEpisodes);
+    }
+
+    // 页面加载完成后格式化所有时长
+    $(document).ready(function() {
+        $('.duration-display').each(function() {
+            const duration = parseInt($(this).data('duration'));
+            $(this).text(formatDuration(duration));
+        });
+
+        // 初始化进度条
+        updateProgressBar();
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,657 @@
+{% extends 'bilistudy/base.html' %}
+{% load static %}
+
+{% block title %}新手指南 - B站学习助手{% endblock %}
+
+{% block extra_css %}
+<style>
+/* 新手指南页面样式 */
+.guide-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+}
+
+.guide-header {
+    text-align: center;
+    margin-bottom: 3rem;
+    padding: 2rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+}
+
+.guide-header h1 {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    font-weight: 700;
+}
+
+.guide-header p {
+    font-size: 1.2rem;
+    opacity: 0.9;
+    margin-bottom: 0;
+}
+
+.guide-section {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    border-left: 4px solid #3b82f6;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.guide-section:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+}
+
+.guide-section h2 {
+    color: #1e40af;
+    font-size: 1.8rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.guide-section h3 {
+    color: #3b82f6;
+    font-size: 1.3rem;
+    margin: 1.5rem 0 1rem 0;
+    padding-left: 1rem;
+    border-left: 3px solid #3b82f6;
+}
+
+.guide-section p {
+    line-height: 1.8;
+    color: #374151;
+    margin-bottom: 1rem;
+    font-size: 1rem;
+}
+
+.guide-section ul, .guide-section ol {
+    padding-left: 2rem;
+    margin-bottom: 1.5rem;
+}
+
+.guide-section li {
+    margin-bottom: 0.5rem;
+    line-height: 1.7;
+    color: #374151;
+    font-size: 0.95rem;
+}
+
+.guide-section strong {
+    color: #1f2937;
+    font-weight: 600;
+}
+
+.guide-section code {
+    background: #f3f4f6;
+    color: #dc2626;
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    font-family: 'Consolas', 'Monaco', monospace;
+}
+
+.feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin: 2rem 0;
+}
+
+.feature-card {
+    background: #f8fafc;
+    padding: 1.5rem;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    transition: all 0.3s ease;
+}
+
+.feature-card:hover {
+    background: #eff6ff;
+    border-color: #3b82f6;
+}
+
+.feature-card h4 {
+    color: #1e40af;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.feature-card p {
+    color: #374151;
+    line-height: 1.6;
+    margin-bottom: 0.5rem;
+}
+
+.feature-card small {
+    color: #6b7280;
+    font-size: 0.85rem;
+}
+
+.feature-card a {
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.feature-card a:hover {
+    text-decoration: underline;
+}
+
+/* 视频链接容器样式 */
+.video-links-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    margin: 2rem 0;
+}
+
+.video-link-card {
+    background: white;
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+    border: 1px solid #e5e7eb;
+    transition: all 0.3s ease;
+    text-align: center;
+}
+
+.video-link-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+    border-color: #3b82f6;
+}
+
+.video-link-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+    gap: 0.75rem;
+}
+
+.video-link-header i {
+    font-size: 2rem;
+}
+
+.video-link-header h4 {
+    margin: 0;
+    color: #1f2937;
+    font-weight: 700;
+}
+
+.video-description {
+    color: #6b7280;
+    margin-bottom: 1.5rem;
+    line-height: 1.6;
+}
+
+.btn-video {
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-video:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.btn-primary.btn-video {
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    border: none;
+}
+
+.btn-primary.btn-video:hover {
+    background: linear-gradient(135deg, #2563eb, #1e40af);
+}
+
+.btn-success.btn-video {
+    background: linear-gradient(135deg, #10b981, #059669);
+    border: none;
+}
+
+.btn-success.btn-video:hover {
+    background: linear-gradient(135deg, #059669, #047857);
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .video-links-container {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+
+    .video-link-card {
+        padding: 1.5rem;
+    }
+
+    .video-link-header h4 {
+        font-size: 1.1rem;
+    }
+}
+
+.quick-start {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    border-left-color: #10b981;
+}
+
+.quick-start h2, .quick-start h3 {
+    color: white;
+    border-left-color: white;
+}
+
+.quick-start p, .quick-start li {
+    color: rgba(255,255,255,0.95);
+    font-size: 1rem;
+}
+
+.quick-start strong {
+    color: white;
+    font-weight: 600;
+}
+
+.step-number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    background: #3b82f6;
+    color: white;
+    border-radius: 50%;
+    font-weight: bold;
+    margin-right: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.quick-start .step-number {
+    background: white;
+    color: #10b981;
+}
+
+.tip-box {
+    background: #fef3c7;
+    border: 1px solid #f59e0b;
+    border-radius: 8px;
+    padding: 1rem;
+    margin: 1rem 0;
+    color: #92400e;
+}
+
+.tip-box .tip-icon {
+    color: #f59e0b;
+    margin-right: 0.5rem;
+}
+
+.tip-box strong {
+    color: #78350f;
+    font-weight: 600;
+}
+
+/* 深色主题适配 */
+[data-theme="dark"] .guide-section {
+    background: #1e293b;
+    color: #e2e8f0;
+}
+
+[data-theme="dark"] .guide-section h2 {
+    color: #60a5fa;
+}
+
+[data-theme="dark"] .guide-section h3 {
+    color: #3b82f6;
+    border-left-color: #3b82f6;
+}
+
+[data-theme="dark"] .guide-section p,
+[data-theme="dark"] .guide-section li {
+    color: #d1d5db;
+}
+
+[data-theme="dark"] .guide-section strong {
+    color: #f3f4f6;
+}
+
+[data-theme="dark"] .guide-section code {
+    background: #374151;
+    color: #fbbf24;
+}
+
+[data-theme="dark"] .feature-card {
+    background: #374151;
+    border-color: #4b5563;
+}
+
+[data-theme="dark"] .feature-card:hover {
+    background: #1e3a8a;
+    border-color: #3b82f6;
+}
+
+[data-theme="dark"] .feature-card h4 {
+    color: #60a5fa;
+}
+
+[data-theme="dark"] .feature-card p {
+    color: #d1d5db;
+}
+
+[data-theme="dark"] .feature-card small {
+    color: #9ca3af;
+}
+
+[data-theme="dark"] .feature-card a {
+    color: #60a5fa;
+}
+
+[data-theme="dark"] .feature-card a:hover {
+    color: #93c5fd;
+}
+
+/* GitHub链接特殊样式 */
+.github-link {
+    color: #333 !important;
+}
+
+.github-link:hover {
+    color: #111 !important;
+}
+
+[data-theme="dark"] .github-link {
+    color: #e5e7eb !important;
+}
+
+[data-theme="dark"] .github-link:hover {
+    color: #f3f4f6 !important;
+}
+
+[data-theme="dark"] .tip-box {
+    background: #451a03;
+    border-color: #92400e;
+    color: #fbbf24;
+}
+
+[data-theme="dark"] .tip-box strong {
+    color: #fcd34d;
+}
+
+/* 结语部分样式 */
+.conclusion-section {
+    text-align: center;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-left-color: #667eea;
+}
+
+.conclusion-section h2 {
+    color: white;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    border-left: none;
+}
+
+.conclusion-main {
+    font-size: 1.1rem;
+    margin-bottom: 2rem;
+    color: rgba(255,255,255,0.95);
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+.conclusion-sub {
+    font-size: 1rem;
+    color: rgba(255,255,255,0.85);
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="guide-container">
+    <!-- 页面标题 -->
+    <div class="guide-header">
+        <h1><i class="fas fa-rocket me-3"></i>B站学习助手新手指南</h1>
+        <p>欢迎使用B站学习助手！让我们一起开启高效的学习之旅</p>
+    </div>
+
+    <!-- 快速开始 -->
+    <div class="guide-section quick-start">
+        <h2><i class="fas fa-play-circle"></i>快速开始</h2>
+        <p>只需3步，立即开始您的学习之旅：</p>
+        <ol>
+            <li><span class="step-number">1</span><strong>搜索课程：</strong>在首页搜索框输入您想学习的内容关键词</li>
+            <li><span class="step-number">2</span><strong>添加课程：</strong>从搜索结果中选择合适的视频，点击"添加到我的课程"</li>
+            <li><span class="step-number">3</span><strong>制定计划：</strong>为课程制定学习计划，开始系统化学习</li>
+        </ol>
+        
+        <div class="tip-box">
+            <i class="fas fa-info-circle tip-icon"></i>
+            <strong>小贴士：</strong>建议先观看下方的教程视频，了解完整的使用流程！
+        </div>
+    </div>
+
+    <!-- 教程视频 -->
+    <div class="guide-section">
+        <h2><i class="fas fa-video"></i>教程视频</h2>
+        <p>观看详细的操作教程，快速掌握所有功能：</p>
+
+        <div class="video-links-container">
+            <!-- 产品宣传片 -->
+            <div class="video-link-card">
+                <div class="video-link-header">
+                    <i class="fas fa-play-circle text-primary"></i>
+                    <h4>产品宣传片</h4>
+                </div>
+                <p class="video-description">了解产品整体形态与定位</p>
+                <a href="https://www.bilibili.com/video/BV1QtgeztEyc?spm_id_from=333.788.videopod.episodes&vd_source=026d55a126174775fa14961a149ee1c5"
+                   target="_blank" class="btn btn-primary btn-video">
+                    <i class="fab fa-bilibili me-2"></i>在B站观看
+                    <i class="fas fa-external-link-alt ms-2"></i>
+                </a>
+            </div>
+
+            <!-- 使用教程 -->
+            <div class="video-link-card">
+                <div class="video-link-header">
+                    <i class="fas fa-graduation-cap text-success"></i>
+                    <h4>详细使用教程</h4>
+                </div>
+                <p class="video-description">从基本功能到个性化设置的完整操作指南</p>
+                <a href="https://www.bilibili.com/video/BV1QtgeztEyc?spm_id_from=333.788.videopod.episodes&vd_source=026d55a126174775fa14961a149ee1c5&p=2"
+                   target="_blank" class="btn btn-success btn-video">
+                    <i class="fab fa-bilibili me-2"></i>在B站观看
+                    <i class="fas fa-external-link-alt ms-2"></i>
+                </a>
+            </div>
+        </div>
+
+        <div class="tip-box">
+            <i class="fas fa-info-circle tip-icon"></i>
+            <strong>提示：</strong>记得一键三连哦（x
+        </div>
+    </div>
+
+    <!-- 主要功能介绍 -->
+    <div class="guide-section">
+        <h2><i class="fas fa-star"></i>主要功能介绍</h2>
+        
+        <div class="feature-grid">
+            <div class="feature-card">
+                <h4><i class="fas fa-search text-primary"></i>智能搜索</h4>
+                <p>支持关键词、bv号、视频链接等多种方式搜索B站学习视频，搜索非学习内容时智能提醒，帮您专注学习。</p>
+            </div>
+            
+            <div class="feature-card">
+                <h4><i class="fas fa-bookmark text-success"></i>课程管理</h4>
+                <p>添加感兴趣的课程到个人课程库，支持自定义标题和进度保存。</p>
+            </div>
+            
+            <div class="feature-card">
+                <h4><i class="fas fa-calendar-alt text-warning"></i>学习计划</h4>
+                <p>为每个课程制定个性化学习计划，设定学习目标和时间安排。</p>
+            </div>
+            
+            <div class="feature-card">
+                <h4><i class="fas fa-chart-line text-info"></i>进度跟踪</h4>
+                <p>记录每日学习情况，学习时长，学习内容，方便回顾和调整。</p>
+            </div>
+            
+            <div class="feature-card">
+                <h4><i class="fas fa-robot text-purple"></i>AI助手</h4>
+                <p>智能学习建议和内容分析，提供个性化的学习指导。</p>
+            </div>
+            
+            <div class="feature-card">
+                <h4><i class="fas fa-file-pdf text-danger"></i>学习报告</h4>
+                <p>导出专业的学习分析报告，全面了解学习效果和改进方向。</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 详细使用教程 -->
+    <div class="guide-section">
+        <h2><i class="fas fa-book-open"></i>详细使用教程</h2>
+
+        <h3><span class="step-number">1</span>搜索和发现课程</h3>
+        <p>在首页搜索框中输入您想学习的内容关键词，系统会为您推荐相关的B站学习视频。</p>
+        <ul>
+            <li><strong>简介清晰：</strong>简洁明了的视频简介，帮助您快速判断是否为所需课程</li>
+            <li><strong>多样搜索：</strong>支持关键词、bv号、视频链接等多种搜索方式</li>
+            <li><strong>内容提醒：</strong>如果搜索非学习内容，系统会友好提醒您专注学习</li>
+        </ul>
+
+        <h3><span class="step-number">2</span>添加和管理课程</h3>
+        <p>找到合适的课程后，点击"添加到我的课程"将其加入个人课程库。</p>
+        <ul>
+            <li><strong>自定义标题：</strong>可以为课程设置个性化的标题，方便管理</li>
+            <li><strong>学习记录：</strong>为每个课程添加学习备忘和心得体会</li>
+            <li><strong>进度跟踪：</strong>实时记录学习进度，了解完成情况</li>
+        </ul>
+
+        <h3><span class="step-number">3</span>制定学习计划</h3>
+        <p>为重要的课程制定详细的学习计划，提高学习效率。</p>
+        <ul>
+            <li><strong>计划周期：</strong>设定学习计划的总天数（建议7-90天）</li>
+            <li><strong>每日目标：</strong>设置每天的学习时长目标（建议30-120分钟）</li>
+            <li><strong>灵活调整：</strong>可以随时调整计划参数，适应实际情况</li>
+        </ul>
+
+        <h3><span class="step-number">4</span>记录学习进度</h3>
+        <p>每日记录学习情况，建立良好的学习习惯。</p>
+        <ul>
+            <li><strong>学习时长：</strong>记录实际的学习时间</li>
+            <li><strong>学习笔记：</strong>记录学习心得、重点内容和疑问</li>
+            <li><strong>完成状态：</strong>标记每日的学习完成情况</li>
+            <li><strong>数据统计：</strong>查看学习统计和趋势分析</li>
+        </ul>
+
+        <h3><span class="step-number">5</span>使用AI学习助手</h3>
+        <p>利用AI助手获得个性化的学习建议和内容分析。</p>
+        <ul>
+            <li><strong>学习建议：</strong>基于您的学习情况提供改进建议</li>
+            <li><strong>视频推荐：</strong>根据用户需求推荐优质的B站学习视频</li>
+            <li><strong>学习规划：</strong>帮助制定更合理的学习计划</li>
+            <li><strong>问题解答：</strong>回答学习过程中遇到的问题</li>
+        </ul>
+    </div>
+
+    <!-- 常见问题 -->
+    <div class="guide-section">
+        <h2><i class="fas fa-question-circle"></i>常见问题解答</h2>
+
+        <h3>Q: 如何找到高质量的学习视频？</h3>
+        <p><strong>A:</strong> 使用具体的技能关键词搜索，如"Python基础教程"、"数据结构算法"等。系统会优先推荐播放量高、评价好的教学视频。或者也可以使用ai助手deepseek来推荐优质的B站学习视频。</p>
+
+        <h3>Q: 学习计划制定多长时间比较合适？</h3>
+        <p><strong>A:</strong> 建议根据课程内容和个人时间安排：</p>
+        <ul>
+            <li>短期技能学习：7-21天</li>
+            <li>系统性课程：30-60天</li>
+            <li>深度专业学习：60-90天</li>
+        </ul>
+
+        <h3>Q: 如何提高学习坚持性？</h3>
+        <p><strong>A:</strong> 建议采用以下策略：</p>
+        <ul>
+            <li>设定合理的每日学习目标（30-60分钟）</li>
+            <li>选择固定的学习时间段</li>
+            <li>及时记录学习笔记和心得</li>
+            <li>定期查看学习报告，了解进步情况</li>
+        </ul>
+
+        <h3>Q: 学习报告有什么用？</h3>
+        <p><strong>A:</strong> 学习报告提供详细的学习分析：</p>
+        <ul>
+            <li>学习时长统计和趋势分析</li>
+            <li>学习坚持性和效率评估</li>
+            <li>个性化的改进建议</li>
+            <li>可导出PDF格式，便于保存和分享</li>
+        </ul>
+    </div>
+
+
+
+    <!-- 联系作者 -->
+    <div class="guide-section">
+        <h2><i class="fas fa-user-circle"></i>联系作者</h2>
+        <p>如果您在使用过程中遇到任何问题或有建议，欢迎通过以下方式联系作者：</p>
+
+        <div class="feature-grid">
+            <div class="feature-card">
+                <h4><i class="fas fa-envelope text-primary"></i>邮箱联系</h4>
+                <p>发送邮件到：<br><strong><a style="color: #3b82f6;">577ichy@gmail.com</a></strong></p>
+                <small class="text-muted">看到邮件会尽快回复</small>
+            </div>
+
+            <div class="feature-card">
+                <h4><i class="fab fa-github text-dark"></i>GitHub</h4>
+                <p>项目开源地址：<br><strong><a href="https://github.com/author/bilistudy" target="_blank" class="github-link">github.com/author/bilistudy</a></strong></p>
+                <small class="text-muted">欢迎提交Issue和PR</small>
+            </div>
+
+            <div class="feature-card">
+                <h4><i class="fab fa-bilibili" style="color: #00a1d6;"></i>B站账号</h4>
+                <p>关注作者B站：<br><strong><a href="https://space.bilibili.com/399040010" target="_blank" style="color: #00a1d6;">@狗与地下室</a></strong></p>
+                <small class="text-muted">获取最新功能介绍和使用技巧</small>
+            </div>
+
+            <div class="feature-card">
+                <h4><i class="fas fa-comments text-success"></i>意见反馈</h4>
+                <p>大一暑假第一次独自（和ai）开发的较完整的产品</p>
+                <small class="text-muted">您的建议对我很重要</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- 结语 -->
+    <div class="guide-section conclusion-section">
+        <h2><i class="fas fa-heart"></i>开始您的学习之旅</h2>
+        <p class="conclusion-main">感谢您选择B站学习助手！我们致力于为您提供最好的学习体验。</p>
+        <p class="conclusion-sub">记住：持续学习，持续进步。每一天的努力都会让您更接近目标！</p>
+
+        <div style="margin-top: 2rem;">
+            <a href="{% url 'index' %}" class="btn btn-light btn-lg me-3">
+                <i class="fas fa-home me-2"></i>返回首页
+            </a>
+            <a href="{% url 'course_list' %}" class="btn btn-outline-light btn-lg">
+                <i class="fas fa-book me-2"></i>我的课程
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,295 @@
+<!--导入课程后出现的详情模态页面-->>
+
+{% extends 'bilistudy/base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'bilistudy/css/custom-styles.css' %}"?>
+<style>
+/* 自定义按钮样式 */
+.custom-btn-large {
+    width: 200px;
+    height: 50px;
+    font-size: 16px;
+    font-weight: bold;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.custom-btn-large:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+/* 自定义文本框样式 */
+.custom-textbox {
+    width: 100%;
+    height: 45px;
+    font-size: 14px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 10px 15px;
+    transition: border-color 0.3s ease;
+}
+
+.custom-textbox:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+    outline: none;
+}
+
+/* 小文本框 */
+.custom-textbox-small {
+    width: 150px;
+    height: 35px;
+    font-size: 12px;
+    padding: 8px 12px;
+}
+
+/* 大文本框 */
+.custom-textbox-large {
+    width: 100%;
+    height: 60px;
+    font-size: 16px;
+    padding: 15px 20px;
+}
+
+/* 自定义标签样式 */
+.custom-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 8px;
+    display: block;
+}
+</style>
+{% endblock %}
+
+{% block title %}{{ video.title }} - 视频详情{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // 当模态框显示时，自动选中文本框内容
+    $('#addCourseModal').on('shown.bs.modal', function () {
+        $('#customTitle').focus().select();
+    });
+
+    // 当文本框获得焦点时自动选中所有文本
+    $('#customTitle').on('focus', function() {
+        $(this).select();
+    });
+
+    // 双击文本框也会选中所有文本
+    $('#customTitle').on('dblclick', function() {
+        $(this).select();
+    });
+});
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'index' %}" class="text-decoration-none">首页</a></li>
+                <li class="breadcrumb-item active">视频详情</li>
+            </ol>
+        </nav>
+        
+        <div id="videoDetailContent">
+            <div class="card mb-4 border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <h4 class="card-title">{{ video.title }}</h4>
+                        <div>
+                            <a href="https://www.bilibili.com/video/{{ video.bvid }}" target="_blank" class="btn btn-sm btn-outline-primary me-2">
+                                <i class="fas fa-external-link-alt me-1"></i> 在B站观看
+                            </a>
+                            {% if is_in_course_list %}
+                                <button class="btn btn-sm btn-success" disabled>
+                                    <i class="fas fa-check me-1"></i> 已添加到课程
+                                </button>
+                            {% else %}
+                                <button type="button" class="btn btn-sm btn-bili" data-bs-toggle="modal" data-bs-target="#addCourseModal">
+                                    <i class="fas fa-plus me-1"></i> 添加到课程
+                                </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- 添加到课程的模态框 -->
+                    <div class="modal fade" id="addCourseModal" tabindex="-1" aria-labelledby="addCourseModalLabel" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header bg-light">
+                                    <h5 class="modal-title" id="addCourseModalLabel">
+                                        <i class="fas fa-plus-circle me-2 text-primary"></i>添加到课程列表
+                                    </h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <form action="{% url 'add_to_course' video.bvid %}" method="post">
+                                    {% csrf_token %}
+                                    <div class="modal-body p-4">
+                                        <div class="mb-4">
+                                            <label for="customTitle" class="custom-label-large">
+                                                <i class="fas fa-edit me-2 text-primary"></i>
+                                                课程名称 (默认: <span class="text-primary">{{ video.title }}</span>):
+                                            </label>
+                                            <div class="input-group">
+                                                <span class="input-group-text bg-light">
+                                                    <i class="fas fa-graduation-cap text-muted"></i>
+                                                </span>
+                                                <input type="text" class="form-control custom-textbox-large" id="customTitle" name="custom_title"
+                                                    placeholder="请输入课程名称" value="{{ video.title }}"
+                                                    onfocus="this.select()">
+                                            </div>
+                                            <div class="form-text text-muted mt-2">
+                                                <i class="fas fa-lightbulb me-1 text-warning"></i>
+                                                <strong>提示：</strong>默认使用视频标题作为课程名称，您可以根据学习需要进行个性化修改
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary btn-lg" data-bs-dismiss="modal" style="width: 100px;">
+                                            <i class="fas fa-times me-1"></i>取消
+                                        </button>
+                                        <button type="submit" class="btn btn-bili btn-lg" style="width: 140px;">
+                                            <i class="fas fa-check me-1"></i>确认添加
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-5">
+                            <div class="video-cover mb-3">
+                                <img src="{{ video.cover }}" alt="{{ video.title }}" class="img-fluid rounded shadow-sm">
+                            </div>
+                        </div>
+                        <div class="col-md-7">
+                            <div class="video-info p-3 bg-light rounded">
+                                <div class="video-meta mb-2">
+                                    <i class="fas fa-user me-2"></i> UP主: <strong>{{ video.author }}</strong>
+                                </div>
+                                <div class="video-meta mb-2">
+                                    <i class="fas fa-calendar me-2"></i> 发布日期: <strong>{{ video.pub_date|date:"Y-m-d" }}</strong>
+                                </div>
+                                <div class="video-meta mb-2">
+                                    <i class="fas fa-play me-2"></i> 播放量: <strong>{{ video.play_count }}</strong>
+                                </div>
+                                <div class="video-meta mb-2">
+                                    <i class="fas fa-thumbs-up me-2"></i> 点赞数: <strong>{{ video.like_count }}</strong>
+                                </div>
+                                {% if video.episodes.count > 1 %}
+                                <div class="video-meta mb-2">
+                                    <i class="fas fa-list-ol me-2"></i> 分集数: <strong>{{ video.episodes.count }}</strong>
+                                </div>
+                                {% endif %}
+                            </div>
+                                
+                            {% if video.episodes.count > 1 %}
+                            <div class="mt-3">
+                                <label class="custom-label">分集列表</label>
+                                <div>
+                                    <button class="btn btn-outline-primary custom-btn-medium btn-rounded shadow-custom" type="button" data-bs-toggle="collapse" data-bs-target="#episodesList">
+                                        <i class="fas fa-list me-2"></i>查看全部分集 <i class="fas fa-chevron-down ms-1"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    {% if video.episodes.count > 1 %}
+                    <div class="collapse mb-4" id="episodesList">
+                        <div class="card card-body bg-light border-0">
+                            <h5 class="card-title">全部分集</h5>
+                            <div class="row">
+                                {% for episode in video.episodes.all %}
+                                <div class="col-md-6 mb-2">
+                                    <div class="d-flex align-items-center p-2 rounded" style="background-color: var(--primary-light);">
+                                        <span class="badge bg-primary me-2">P{{ episode.order }}</span>
+                                        <span class="text-truncate">{{ episode.title }}</span>
+                                        <span class="ms-auto text-muted small">{{ episode.duration|divisibleby:"60"|yesno:"分钟,秒" }}</span>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <h5>视频简介</h5>
+                    <div class="card card-body bg-light mb-4 border-0">
+                        <p class="mb-0" style="white-space: pre-line;">{{ video.description }}</p>
+                    </div>
+                    
+                    {% if comments %}
+                    <h5>热门评论</h5>
+                    <div class="card border-0 bg-light">
+                        <div class="card-body">
+                            {% for comment in comments|slice:":5" %}
+                            <div class="d-flex mb-3 p-3 bg-white rounded shadow-sm">
+                                <div class="flex-shrink-0">
+                                    <img src="{{ comment.member.avatar }}" alt="{{ comment.member.uname }}" class="rounded-circle" width="36">
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <div class="d-flex justify-content-between">
+                                        <h6 class="mb-0">{{ comment.member.uname }}</h6>
+                                        <small class="text-muted">{{ comment.ctime|date:"Y-m-d" }}</small>
+                                    </div>
+                                    <p class="mb-1">{{ comment.content.message }}</p>
+                                    <div class="d-flex align-items-center">
+                                        <small class="text-muted">
+                                            <i class="fas fa-thumbs-up me-1"></i> {{ comment.like }}
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card mb-4 border-0 shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="card-title mb-0">操作</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    {% if is_in_course_list %}
+                        <a href="{% url 'course_list' %}" class="btn btn-outline-success">
+                            <i class="fas fa-list-check me-1"></i> 查看我的课程
+                        </a>
+                    {% else %}
+                        <div class="mb-2">
+                            <label class="custom-label">课程管理</label>
+                            <button type="button" class="btn btn-bili custom-btn-large w-100" data-bs-toggle="modal" data-bs-target="#addCourseModal">
+                                <i class="fas fa-plus me-2"></i> 添加到我的课程
+                            </button>
+                        </div>
+                    {% endif %}
+                    <a href="https://www.bilibili.com/video/{{ video.bvid }}" target="_blank" class="btn btn-outline-primary">
+                        <i class="fas fa-external-link-alt me-1"></i> 在B站观看
+                    </a>
+                </div>
+                
+                {% if import_mode %}
+                <div class="alert alert-info mt-3">
+                    <i class="fas fa-info-circle me-2"></i> 您是通过直接导入访问此视频
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

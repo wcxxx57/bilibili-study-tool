@@ -1,0 +1,1027 @@
+{% extends 'bilistudy/base.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'bilistudy/css/custom-styles.css' %}">
+<style>
+.plan-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 15px;
+    padding: 30px;
+    margin-bottom: 30px;
+}
+
+.progress-bar-custom {
+    height: 8px;
+    border-radius: 4px;
+    background: rgba(255,255,255,0.3);
+}
+
+.progress-bar-custom .progress-bar {
+    border-radius: 4px;
+}
+
+.daily-record {
+    border: 1px solid #e9ecef;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 15px;
+    transition: all 0.2s ease;
+}
+
+.daily-record:hover {
+    border-color: #007bff;
+    box-shadow: 0 2px 8px rgba(0,123,255,0.1);
+}
+
+.record-date {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 10px;
+}
+
+.record-stats {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 15px;
+}
+
+.stat-item {
+    text-align: center;
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    flex: 1;
+}
+
+.stat-number {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #007bff;
+}
+
+.stat-label {
+    font-size: 0.8rem;
+    color: #6c757d;
+    margin-top: 5px;
+}
+
+.notes-section {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 15px;
+    margin-top: 15px;
+}
+
+.edit-notes-btn {
+    float: right;
+    margin-top: -5px;
+}
+
+.timeline-item {
+    position: relative;
+    padding-left: 30px;
+    margin-bottom: 20px;
+}
+
+.timeline-item::before {
+    content: '';
+    position: absolute;
+    left: 8px;
+    top: 8px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #007bff;
+}
+
+.timeline-item::after {
+    content: '';
+    position: absolute;
+    left: 11px;
+    top: 20px;
+    width: 2px;
+    height: calc(100% + 10px);
+    background: #e9ecef;
+}
+
+.timeline-item:last-child::after {
+    display: none;
+}
+
+.export-btn {
+    background: linear-gradient(45deg, #28a745, #20c997);
+    border: none;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 25px;
+    transition: all 0.3s ease;
+}
+
+.export-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+    color: white;
+}
+
+/* 学习记录操作按钮样式 */
+.record-actions {
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.timeline-item:hover .record-actions {
+    opacity: 1;
+}
+
+.record-actions .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+}
+
+.record-actions .btn:hover {
+    transform: scale(1.1);
+    transition: transform 0.1s ease;
+}
+
+/* 分集选择样式 */
+.episode-checkbox:checked + label {
+    background-color: #e3f2fd;
+    border-color: #2196f3;
+}
+
+.episode-checkbox:disabled + label {
+    opacity: 0.6;
+    background-color: #f5f5f5;
+}
+
+.episode-checkbox + label {
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    padding: 8px 12px;
+    margin-bottom: 0;
+    cursor: pointer;
+}
+
+.episode-checkbox + label:hover:not(.disabled) {
+    background-color: #f8f9fa;
+    border-color: #dee2e6;
+}
+
+.episode-selection-hint {
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+
+</style>
+{% endblock %}
+
+{% block title %}{{ plan.user_course.custom_title|default:plan.user_course.video.title }} - 学习计划{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- 返回按钮 -->
+    <div class="mb-3">
+        <a href="{% url 'study_plans' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i>返回计划列表
+        </a>
+    </div>
+
+    <!-- 计划头部信息 -->
+    <div class="plan-header">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <div class="d-flex align-items-center mb-3">
+                    <img src="{{ plan.user_course.video.cover }}" 
+                         alt="课程封面" 
+                         class="rounded me-3" 
+                         style="width: 80px; height: 60px; object-fit: cover;">
+                    <div>
+                        <h3 class="mb-1">{{ plan.user_course.custom_title|default:plan.user_course.video.title }}</h3>
+                        <p class="mb-0 opacity-75">{{ plan.user_course.video.author }}</p>
+                    </div>
+                </div>
+                
+                <!-- 进度条 -->
+                <div class="progress progress-bar-custom mb-3">
+                    <div class="progress-bar bg-success" 
+                         style="width: {{ plan.progress_percentage }}%"
+                         aria-valuenow="{{ plan.progress_percentage }}" 
+                         aria-valuemin="0" 
+                         aria-valuemax="100">
+                        {{ plan.progress_percentage|floatformat:1 }}%
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-sm-6">
+                        <small class="opacity-75">计划时长：{{ plan.total_days }}天</small>
+                    </div>
+                    <div class="col-sm-6">
+                        <small class="opacity-75">每日目标：{{ plan.daily_minutes }}分钟</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4 text-md-end">
+                <div class="mb-3">
+                    <h4>第{{ plan.days_passed }}天</h4>
+                    <p class="mb-0">{{ plan.start_date|date:"Y年m月d日" }} 开始</p>
+                </div>
+                
+                <div class="d-flex flex-column gap-2">
+                    <a href="{% url 'course_detail' plan.user_course.id %}" class="btn btn-info">
+                        <i class="fas fa-book-open me-1"></i>查看课程详情
+                    </a>
+                    <a href="https://www.bilibili.com/video/{{ plan.user_course.video.bvid }}" target="_blank" class="btn btn-primary">
+                        <i class="fas fa-external-link-alt me-1"></i>现在就去B站看
+                    </a>
+                    <a href="{% url 'export_plan_pdf' plan.id %}" class="btn btn-success export-btn" target="_blank">
+                        <i class="fas fa-file-pdf me-1"></i>导出专业学习报告
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- 左侧：学习统计 -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-chart-bar me-2 text-primary"></i>学习统计
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6 mb-3">
+                            <div class="stat-number">{{ completed_episodes }}</div>
+                            <div class="stat-label">已完成分集</div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <div class="stat-number">{{ total_episodes }}</div>
+                            <div class="stat-label">总分集数</div>
+                        </div>
+                        <div class="col-6">
+                            <div class="stat-number">{{ study_days_count }}</div>
+                            <div class="stat-label">学习天数</div>
+                        </div>
+                        <div class="col-6">
+                            <div class="stat-number">{{ total_study_minutes }}</div>
+                            <div class="stat-label">总学习时长(分)</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 重点学习模块 -->
+            {% if plan.focus_modules %}
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-star me-2 text-warning"></i>重点学习模块
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <p class="mb-0">{{ plan.focus_modules }}</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- 右侧：每日学习记录 -->
+        <div class="col-lg-8">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h5>
+                    <i class="fas fa-calendar-day me-2 text-primary"></i>每日学习记录
+                </h5>
+                <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addRecordModal">
+                    <i class="fas fa-plus me-1"></i>添加记录
+                </button>
+            </div>
+
+            <!-- 学习记录时间线 -->
+            <div class="timeline">
+                {% for record in daily_records %}
+                <div class="timeline-item daily-record">
+                    <div class="record-date d-flex justify-content-between align-items-center">
+                        <div>
+                            {{ record.study_date|date:"Y年m月d日" }}
+                            <span class="badge bg-primary ms-2">第{{ record.get_study_day_number }}天</span>
+                        </div>
+                        <div class="record-actions">
+                            <button class="btn btn-sm btn-outline-danger"
+                                    onclick="deleteStudyRecord({{ record.id }}, '{{ record.study_date|date:"Y年m月d日" }}')"
+                                    title="删除学习记录">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="record-stats">
+                        <div class="stat-item">
+                            <div class="stat-number">{{ record.episodes_count }}</div>
+                            <div class="stat-label">当日完成分集</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number">{{ record.get_daily_study_duration }}</div>
+                            <div class="stat-label">学习时长(分)</div>
+                        </div>
+                        <div class="stat-item">
+                            {% with progress=record.get_total_progress %}
+                            <div class="stat-number">{{ progress.completed }}/{{ progress.total }}</div>
+                            <div class="stat-label">总体进度</div>
+                            {% endwith %}
+                        </div>
+                    </div>
+
+                    <!-- 显示当日完成的具体分集 -->
+                    {% if record.get_daily_completed_episodes %}
+                    <div class="daily-episodes mt-2">
+                        <small class="text-muted">
+                            <i class="fas fa-list me-1"></i>当日完成：
+                            {% for episode in record.get_daily_completed_episodes %}
+                                <span class="badge bg-primary me-1">P{{ episode.order }}: {{ episode.title|truncatechars:15 }}</span>
+                            {% endfor %}
+                        </small>
+                    </div>
+                    {% endif %}
+                    
+                    {% if record.notes %}
+                    <div class="notes-section">
+                        <button class="btn btn-sm btn-outline-secondary edit-notes-btn" 
+                                onclick="editNotes({{ record.id }}, '{{ record.notes|escapejs }}')">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <strong>学习备忘：</strong>
+                        <p class="mb-0 mt-2">{{ record.notes }}</p>
+                    </div>
+                    {% else %}
+                    <div class="text-muted">
+                        <small>
+                            <i class="fas fa-plus me-1"></i>
+                            <a href="#" onclick="editNotes({{ record.id }}, '')">添加学习备忘</a>
+                        </small>
+                    </div>
+                    {% endif %}
+                </div>
+                {% empty %}
+                <div class="text-center text-muted py-5">
+                    <i class="fas fa-calendar-plus fa-3x mb-3 opacity-50"></i>
+                    <h5>还没有学习记录</h5>
+                    <p>开始记录您的学习进度吧！</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 添加学习记录模态框 -->
+<div class="modal fade" id="addRecordModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-plus me-2 text-primary"></i>添加学习记录
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="addRecordForm">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="studyDate" class="form-label">学习日期</label>
+                        <input type="date" class="form-control" id="studyDate" name="study_date" required
+                               value="{% now 'Y-m-d' %}">
+                    </div>
+                    <div class="mb-3">
+                        <label for="studyMinutes" class="form-label">
+                            学习时长（分钟）
+                            <small class="text-muted">根据选择的分集自动计算</small>
+                        </label>
+                        <input type="number" class="form-control" id="studyMinutes" name="study_minutes" min="0" value="0" readonly
+                               style="background-color: #f8f9fa;">
+                        <small class="form-text text-muted">
+                            <i class="fas fa-info-circle me-1"></i>
+                            学习时长将根据您选择的分集时长自动计算
+                        </small>
+                    </div>
+
+                    <!-- 分集选择 -->
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="fas fa-list me-2"></i>完成的分集
+                            <small class="text-muted">（选择后将同步到课程详情页面）</small>
+                        </label>
+                        <div class="border rounded p-3" style="max-height: 200px; overflow-y: auto; background-color: #f8f9fa;">
+                            {% for progress in course_progress %}
+                            <div class="form-check mb-2">
+                                <input class="form-check-input episode-checkbox" type="checkbox"
+                                       id="episode{{ progress.id }}"
+                                       data-progress-id="{{ progress.id }}"
+                                       data-episode-title="{{ progress.episode.title }}"
+                                       {% if progress.is_completed %}disabled{% endif %}>
+                                <label class="form-check-label d-flex align-items-center justify-content-between w-100" for="episode{{ progress.id }}">
+                                    <div>
+                                        <span class="badge bg-primary me-2">P{{ progress.episode.order }}</span>
+                                        <span {% if progress.is_completed %}class="text-muted"{% endif %}>
+                                            {{ progress.episode.title|truncatechars:40 }}
+                                        </span>
+                                        {% if progress.is_completed %}
+                                        <small class="text-success ms-2">
+                                            <i class="fas fa-check-circle"></i> 已完成
+                                        </small>
+                                        {% endif %}
+                                    </div>
+                                    <small class="text-muted duration-display" data-duration="{{ progress.episode.duration|default:0 }}">
+                                        {% if progress.episode.duration %}
+                                            {{ progress.episode.duration|format_duration }}
+                                        {% else %}
+                                            时长未知
+                                        {% endif %}
+                                    </small>
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <small class="form-text text-muted mt-2">
+                            <i class="fas fa-info-circle me-1"></i>
+                            已完成的分集无法重复选择。选择的分集将自动在课程详情页面中被勾选。
+                        </small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">学习备忘</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="3" placeholder="记录今天的学习心得、重点内容等..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" id="saveRecordBtn" onclick="saveStudyRecord()">保存记录</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 学习备忘模态框 -->
+<div class="modal fade" id="notesModal" tabindex="-1" aria-labelledby="notesModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="notesModalLabel">
+                    <i class="fas fa-sticky-note me-2 text-warning"></i>学习备忘
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="notesForm">
+                    {% csrf_token %}
+                    <input type="hidden" id="recordId" name="record_id">
+
+                    <div class="alert alert-info border-0" role="alert">
+                        <i class="fas fa-lightbulb me-2"></i>
+                        <strong>学习备忘提示：</strong>您可以在这里记录：
+                        <ul class="mb-0 mt-2">
+                            <li>今日学习的主要知识点</li>
+                            <li>重点难点和易错点</li>
+                            <li>学习心得和感受</li>
+                            <li>需要复习的内容</li>
+                            <li>疑问和待解决的问题</li>
+                        </ul>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="notesContent" class="form-label">
+                            <i class="fas fa-edit me-1"></i>学习备忘内容
+                        </label>
+                        <textarea class="form-control" id="notesContent" name="notes" rows="8"
+                                  placeholder="请输入您的学习备忘...&#10;&#10;例如：&#10;• 今天学习了JavaScript的闭包概念&#10;• 重点：理解作用域链和变量生命周期&#10;• 难点：闭包的内存管理和性能影响&#10;• 心得：通过实际例子更容易理解&#10;• 疑问：闭包在实际项目中的最佳实践"></textarea>
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle me-1"></i>
+                            支持换行，建议使用要点形式记录
+                        </small>
+                        <small class="text-muted" id="charCount">0 / 1000 字符</small>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>取消
+                </button>
+                <button type="button" class="btn btn-primary" id="saveNotesBtn">
+                    <i class="fas fa-save me-1"></i>保存备忘
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 删除学习记录确认模态框 -->
+<div class="modal fade" id="deleteRecordModal" tabindex="-1" aria-labelledby="deleteRecordModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteRecordModalLabel">
+                    <i class="fas fa-exclamation-triangle me-2 text-warning"></i>删除学习记录
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <i class="fas fa-info-circle me-2"></i>
+                    您即将删除 <strong id="deleteRecordDate"></strong> 的学习记录
+                </div>
+
+                <p class="mb-3">请选择删除方式：</p>
+
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="radio" name="deleteOption" id="deleteRecordOnly" value="record_only" checked>
+                    <label class="form-check-label" for="deleteRecordOnly">
+                        <strong>仅删除学习记录</strong>
+                        <br>
+                        <small class="text-muted">保留课程进度和分集完成状态，只删除这条学习记录</small>
+                    </label>
+                </div>
+
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="deleteOption" id="deleteWithProgress" value="with_progress">
+                    <label class="form-check-label" for="deleteWithProgress">
+                        <strong>删除记录和学习数据</strong>
+                        <br>
+                        <small class="text-muted">同时删除该日完成的分集进度，恢复到学习前的状态</small>
+                    </label>
+                </div>
+
+                <div class="mt-3">
+                    <small class="text-muted">
+                        <i class="fas fa-lightbulb me-1"></i>
+                        <strong>提示：</strong>如果您只是想修改学习记录，建议选择"仅删除学习记录"，然后重新添加正确的记录。
+                    </small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn" onclick="confirmDeleteRecord()">
+                    <i class="fas fa-trash me-1"></i>确认删除
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script>
+// 全局保存学习记录函数
+function saveStudyRecord() {
+    console.log('保存学习记录函数被调用');
+
+    // 收集选中的分集
+    const selectedEpisodes = [];
+    $('.episode-checkbox:checked').each(function() {
+        const progressId = $(this).data('progress-id');
+        if (progressId) {
+            selectedEpisodes.push(progressId);
+        }
+    });
+
+    console.log('选中的分集:', selectedEpisodes);
+
+    if (selectedEpisodes.length === 0) {
+        alert('请选择至少一个完成的分集');
+        return;
+    }
+
+    // 收集表单数据
+    const studyDate = $('#studyDate').val();
+    const studyMinutes = $('#studyMinutes').val();
+    const notes = $('#notes').val();
+    const csrfToken = $('[name=csrfmiddlewaretoken]').val();
+
+    console.log('表单数据:', {
+        studyDate: studyDate,
+        studyMinutes: studyMinutes,
+        notes: notes,
+        selectedEpisodes: selectedEpisodes
+    });
+
+    // 创建FormData
+    const formData = new FormData();
+    formData.append('study_date', studyDate);
+    formData.append('study_minutes', studyMinutes);
+    formData.append('notes', notes);
+    formData.append('csrfmiddlewaretoken', csrfToken);
+
+    // 添加选中的分集
+    selectedEpisodes.forEach(function(progressId) {
+        formData.append('completed_episodes[]', progressId);
+    });
+
+    // 禁用按钮防止重复提交
+    $('#saveRecordBtn').prop('disabled', true).text('保存中...');
+
+    console.log('发送AJAX请求');
+
+    $.ajax({
+        url: '{% url "update_daily_record" plan.id %}',
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: function(response) {
+            console.log('AJAX成功响应:', response);
+            if (response.success) {
+                alert('学习记录保存成功！');
+                $('#addRecordModal').modal('hide');
+                location.reload();
+            } else {
+                alert('保存失败：' + response.error);
+            }
+        },
+        error: function(xhr, status, error) {
+            console.log('AJAX错误:', status, error);
+            console.log('响应内容:', xhr.responseText);
+            alert('网络错误，请稍后再试');
+        },
+        complete: function() {
+            // 恢复按钮状态
+            $('#saveRecordBtn').prop('disabled', false).text('保存记录');
+        }
+    });
+}
+
+// 全局变量存储要删除的记录信息
+let recordToDelete = {
+    id: null,
+    date: null
+};
+
+// 删除学习记录 - 显示确认对话框
+function deleteStudyRecord(recordId, recordDate) {
+    console.log('准备删除学习记录:', recordId, recordDate);
+
+    // 存储要删除的记录信息
+    recordToDelete.id = recordId;
+    recordToDelete.date = recordDate;
+
+    // 设置模态框中的日期显示
+    $('#deleteRecordDate').text(recordDate);
+
+    // 重置选项为默认值
+    $('#deleteRecordOnly').prop('checked', true);
+
+    // 显示确认模态框
+    $('#deleteRecordModal').modal('show');
+}
+
+// 确认删除学习记录
+function confirmDeleteRecord() {
+    if (!recordToDelete.id) {
+        alert('删除信息错误，请重试');
+        return;
+    }
+
+    // 获取删除选项
+    const deleteOption = $('input[name="deleteOption"]:checked').val();
+    console.log('删除选项:', deleteOption);
+
+    // 禁用确认按钮防止重复点击
+    $('#confirmDeleteBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i>删除中...');
+
+    // 发送删除请求
+    $.ajax({
+        url: '{% url "delete_study_record" plan.id %}',
+        type: 'POST',
+        data: {
+            'record_id': recordToDelete.id,
+            'delete_option': deleteOption,
+            'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
+        },
+        success: function(response) {
+            console.log('删除响应:', response);
+            if (response.success) {
+                let message = '学习记录删除成功！';
+                if (deleteOption === 'with_progress' && response.reverted_episodes_count > 0) {
+                    message += `\n已恢复 ${response.reverted_episodes_count} 个分集的学习状态。`;
+                }
+                alert(message);
+                $('#deleteRecordModal').modal('hide');
+                location.reload();
+            } else {
+                alert('删除失败：' + response.error);
+            }
+        },
+        error: function(xhr, status, error) {
+            console.log('删除请求错误:', status, error);
+            console.log('响应内容:', xhr.responseText);
+            alert('网络错误，请稍后再试');
+        },
+        complete: function() {
+            // 恢复按钮状态
+            $('#confirmDeleteBtn').prop('disabled', false).html('<i class="fas fa-trash me-1"></i>确认删除');
+        }
+    });
+}</script>
+// 格式化时长显示
+function formatDuration(seconds) {
+    if (!seconds || seconds <= 0) return '时长未知';
+
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+
+    if (hours > 0) {
+        return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    } else {
+        return `${minutes}:${secs.toString().padStart(2, '0')}`;
+    }
+}
+
+
+
+// 计算选中分集的总时长
+function calculateSelectedDuration() {
+    let totalSeconds = 0;
+
+    $('.episode-checkbox:checked').each(function() {
+        const duration = parseInt($(this).closest('.form-check').find('.duration-display').data('duration'));
+        if (!isNaN(duration) && duration > 0) {
+            totalSeconds += duration;
+        }
+    });
+
+    // 转换为分钟（向上取整）
+    const totalMinutes = totalSeconds > 0 ? Math.ceil(totalSeconds / 60) : 0;
+    $('#studyMinutes').val(totalMinutes);
+
+    return totalMinutes;
+}
+
+$(document).ready(function() {
+    console.log('页面JavaScript加载完成');
+
+    // 设置默认日期为今天（备用方案）
+    const today = new Date().toISOString().split('T')[0];
+    if (!$('#studyDate').val()) {
+        $('#studyDate').val(today);
+    }
+
+    // 检查按钮是否存在
+    console.log('保存按钮是否存在:', $('#saveRecordBtn').length);
+
+
+
+    // 分集选择交互（使用事件委托）
+    $(document).on('change', '.episode-checkbox', function() {
+        const selectedCount = $('.episode-checkbox:checked').length;
+        const totalMinutes = calculateSelectedDuration();
+        updateEpisodeSelectionHint(selectedCount, totalMinutes);
+    });
+
+    // 模态框打开时重置选择
+    $('#addRecordModal').on('show.bs.modal', function() {
+        $('.episode-checkbox').prop('checked', false);
+        $('#studyMinutes').val(0);
+        updateEpisodeSelectionHint(0, 0);
+
+        // 确保日期为今天
+        const today = new Date().toISOString().split('T')[0];
+        $('#studyDate').val(today);
+
+        // 时长已由Django模板格式化，不需要重新处理
+    });
+
+
+});
+
+// 更新分集选择提示
+function updateEpisodeSelectionHint(selectedCount, totalMinutes = 0) {
+    const hintElement = $('.episode-selection-hint');
+    if (hintElement.length === 0) {
+        // 如果提示元素不存在，创建一个
+        const hint = $(`
+            <div class="episode-selection-hint mt-2">
+                <small class="text-info">
+                    <i class="fas fa-info-circle me-1"></i>
+                    <span class="hint-text">请选择今天完成的分集</span>
+                </small>
+            </div>
+        `);
+        $('.episode-checkbox').closest('.mb-3').find('.form-text').before(hint);
+    }
+
+    const hintText = $('.hint-text');
+    if (selectedCount === 0) {
+        hintText.text('请选择今天完成的分集');
+        hintText.parent().removeClass('text-success').addClass('text-info');
+    } else {
+        let message = `已选择 ${selectedCount} 个分集`;
+        if (totalMinutes > 0) {
+            message += `，预计学习时长 ${totalMinutes} 分钟`;
+        }
+        message += '，将同步到课程详情页面';
+        hintText.text(message);
+        hintText.parent().removeClass('text-info').addClass('text-success');
+    }
+}
+
+
+
+    // 字符计数功能
+    $('#notesContent').on('input', function() {
+        const content = $(this).val();
+        const charCount = content.length;
+        $('#charCount').text(charCount + ' / 1000 字符');
+
+        if (charCount > 1000) {
+            $('#charCount').addClass('text-danger');
+            $('#saveNotesBtn').prop('disabled', true);
+        } else {
+            $('#charCount').removeClass('text-danger');
+            $('#saveNotesBtn').prop('disabled', false);
+        }
+    });
+
+    // 保存学习备忘
+    $('#saveNotesBtn').on('click', function() {
+        const recordId = $('#recordId').val();
+        const notes = $('#notesContent').val().trim();
+
+        if (!notes) {
+            alert('请输入学习备忘内容');
+            return;
+        }
+
+        if (notes.length > 1000) {
+            alert('学习备忘内容不能超过1000个字符');
+            return;
+        }
+
+        const btn = $(this);
+        btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i>保存中...');
+
+        $.ajax({
+            url: '{% url "update_study_notes" plan.id %}',
+            type: 'POST',
+            data: {
+                'record_id': recordId,
+                'notes': notes,
+                'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
+            },
+            success: function(response) {
+                if (response.success) {
+                    alert('学习备忘保存成功！');
+                    $('#notesModal').modal('hide');
+                    location.reload();
+                } else {
+                    alert('保存失败：' + response.error);
+                }
+            },
+            error: function() {
+                alert('网络错误，请稍后再试');
+            },
+            complete: function() {
+                btn.prop('disabled', false).html('<i class="fas fa-save me-1"></i>保存备忘');
+            }
+        });
+    });
+});
+
+// 编辑学习备忘功能
+function editNotes(recordId, currentNotes) {
+    $('#recordId').val(recordId);
+    $('#notesContent').val(currentNotes || '');
+
+    // 更新字符计数
+    const charCount = (currentNotes || '').length;
+    $('#charCount').text(charCount + ' / 1000 字符');
+
+    // 显示模态框
+    $('#notesModal').modal('show');
+}
+
+// 删除学习记录功能
+function deleteStudyRecord(recordId, studyDate) {
+    if (!confirm(`确认删除 ${studyDate} 的学习记录吗？\n\n删除后将会：\n• 清除该日的学习时长记录\n• 清除该日的学习备忘\n• 将该日完成的分集状态重置为未完成\n\n此操作不可恢复！`)) {
+        return;
+    }
+
+    // 显示加载状态
+    const deleteBtn = $(`button[onclick*="deleteStudyRecord(${recordId}"]`);
+    const originalHtml = deleteBtn.html();
+    deleteBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
+
+    $.ajax({
+        url: '{% url "delete_study_record" plan.id %}',
+        type: 'POST',
+        data: {
+            'record_id': recordId,
+            'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
+        },
+        success: function(response) {
+            if (response.success) {
+                alert('学习记录删除成功！');
+                location.reload();
+            } else {
+                alert('删除失败：' + response.error);
+            }
+        },
+        error: function() {
+            alert('网络错误，请稍后再试');
+        },
+        complete: function() {
+            deleteBtn.prop('disabled', false).html(originalHtml);
+        }
+    });
+}
+
+
+
+// 保留原有的简单导出功能作为备选
+function exportSimplePDF() {
+    // 使用html2canvas和jsPDF生成PDF，支持中文
+    const element = document.querySelector('.container-fluid');
+
+    // 创建一个临时的打印样式元素
+    const printContent = element.cloneNode(true);
+
+    // 移除不需要的按钮
+    const buttons = printContent.querySelectorAll('button, .btn');
+    buttons.forEach(btn => {
+        if (btn.textContent.includes('导出') || btn.textContent.includes('返回')) {
+            btn.style.display = 'none';
+        }
+    });
+
+    // 创建临时容器
+    const tempDiv = document.createElement('div');
+    tempDiv.style.position = 'absolute';
+    tempDiv.style.left = '-9999px';
+    tempDiv.style.top = '0';
+    tempDiv.style.width = '800px';
+    tempDiv.style.background = 'white';
+    tempDiv.appendChild(printContent);
+    document.body.appendChild(tempDiv);
+
+    // 使用html2canvas转换为图片
+    html2canvas(tempDiv, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff'
+    }).then(canvas => {
+        const imgData = canvas.toDataURL('image/png');
+        const { jsPDF } = window.jspdf;
+
+        // 计算PDF尺寸
+        const imgWidth = 210; // A4宽度
+        const pageHeight = 295; // A4高度
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        let heightLeft = imgHeight;
+
+        const doc = new jsPDF('p', 'mm', 'a4');
+        let position = 0;
+
+        // 添加第一页
+        doc.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+
+        // 如果内容超过一页，添加更多页面
+        while (heightLeft >= 0) {
+            position = heightLeft - imgHeight;
+            doc.addPage();
+            doc.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+            heightLeft -= pageHeight;
+        }
+
+        // 保存PDF
+        const fileName = `学习计划简单报告-{{ plan.user_course.custom_title|default:plan.user_course.video.title|escapejs }}.pdf`;
+        doc.save(fileName);
+
+        // 清理临时元素
+        document.body.removeChild(tempDiv);
+    }).catch(error => {
+        console.error('PDF生成失败:', error);
+        alert('PDF生成失败，请稍后重试');
+        document.body.removeChild(tempDiv);
+    });
+}
+</script>
+{% endblock %}

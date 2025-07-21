@@ -1,0 +1,465 @@
+{% extends 'bilistudy/base.html' %}
+
+{% block title %}B站学习工具 - 首页{% endblock %}
+
+{% block content %}
+<!-- 搜索区域 -->
+<div class="search-container text-center">
+    <div class="container py-4">
+        <h1 class="display-4 mb-4 fw-bold" style="color: var(--dark-color);">B站网课学习助手</h1>
+        
+        <!-- 搜索区域 -->
+        <div class="row justify-content-center">
+            <div class="col-md-10">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-search me-2"></i>搜索B站视频
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="searchForm" action="{% url 'search_videos' %}" method="get">
+                            <div class="search-box">
+                                <input type="text" id="searchInput" name="keyword" class="form-control search-input"
+                                       placeholder="输入关键词、BV号或视频链接..." required>
+                                <input type="hidden" id="skipWarning" name="skip_warning" value="false">
+                                <button type="submit" class="btn btn-bili search-btn">
+                                    <i class="fas fa-search me-2"></i>搜索
+                                </button>
+                            </div>
+                            <div class="mt-3">
+                                <small class="form-text text-muted">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    支持搜索：关键词、BV号、视频链接
+                                    <br>例如：Python教程、BV1xx411c7mD 或 https://www.bilibili.com/video/BV1xx411c7mD
+                                </small>
+                            </div>
+                            <div class="d-flex justify-content-center mt-3">
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="sort" id="sortDefault" value="default" checked>
+                                    <label class="form-check-label" for="sortDefault">综合排序</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="sort" id="sortView" value="view">
+                                    <label class="form-check-label" for="sortView">播放量排序</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="sort" id="sortLike" value="like">
+                                    <label class="form-check-label" for="sortLike">点赞数排序</label>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 导入视频详情模态窗口 -->
+<div class="modal fade" id="importVideoModal" tabindex="-1" aria-labelledby="importVideoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="importVideoModalLabel">视频详情</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="videoDetailLoading" class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">加载中...</span>
+                    </div>
+                    <p class="mt-3">正在获取视频信息...</p>
+                </div>
+                <div id="videoDetailContent" style="display: none;">
+                    <!-- 视频详情将通过AJAX加载 -->
+                </div>
+                <div id="videoDetailError" class="alert alert-danger" style="display: none;">
+                    <i class="fas fa-exclamation-circle me-2"></i> <span id="errorMessage"></span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <form id="addCourseForm" action="" method="post">
+                    {% csrf_token %}
+                    <div class="row w-100 mb-3">
+                        <div class="col">
+                            <input type="text" id="customTitle" name="custom_title" class="form-control" placeholder="自定义课程名称（可选）">
+                        </div>
+                    </div>
+                    <div class="d-flex w-100 justify-content-between">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                        <button type="submit" id="addCourseBtn" class="btn btn-bili">
+                            <i class="fas fa-plus me-1"></i> 添加到我的课程
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 功能区域 -->
+<div class="container mt-5 animate-fade-in">
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <a href="{% url 'course_list' %}" class="text-decoration-none">
+                <div class="card feature-card h-100">
+                    <div class="feature-icon icon-courses">
+                        <i class="fas fa-list-check"></i>
+                    </div>
+                    <h3 class="mb-3">我的课程</h3>
+                    <p class="text-muted">管理您收藏的B站课程，跟踪学习进度</p>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-4 mb-4">
+            <a href="{% url 'study_plans' %}" class="text-decoration-none">
+                <div class="card feature-card h-100">
+                    <div class="feature-icon icon-plan">
+                        <i class="fas fa-calendar-alt"></i>
+                    </div>
+                    <h3 class="mb-3">我的计划</h3>
+                    <p class="text-muted">创建个性化学习计划，设定目标并展现学习进度</p>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-4 mb-4">
+            <a href="{% url 'ai_assistant' %}" class="text-decoration-none">
+                <div class="card feature-card h-100">
+                    <div class="feature-icon icon-ai">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <h3 class="mb-3">AI助手</h3>
+                    <p class="text-muted">智能学习助手，提供个性化学习建议</p>
+                </div>
+            </a>
+        </div>
+    </div>
+
+
+</div>
+
+<!-- 学习提醒模态框 -->
+<div class="modal fade" id="learningReminderModal" tabindex="-1" aria-labelledby="learningReminderModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title" id="learningReminderModalLabel">
+                    <i class="fas fa-graduation-cap me-2"></i>学习提醒
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <div class="mb-3">
+                    <i class="fas fa-book-open fa-3x text-warning mb-3"></i>
+                    <h4 class="text-primary">你最好是在学习</h4>
+                    <p class="text-muted">
+                        检测到您搜索的内容可能与学习无关。<br>
+                        这是一个学习平台，建议您搜索学习相关的内容哦～
+                    </p>
+                </div>
+                <div class="alert alert-light">
+                    <small class="text-muted">
+                        <i class="fas fa-lightbulb me-1"></i>
+                        建议搜索：编程教程、数学课程、英语学习、技能培训等
+                    </small>
+                </div>
+
+                <!-- 用户偏好选项 -->
+                <div class="mt-3">
+                    <div class="form-check form-check-sm">
+                        <input class="form-check-input" type="checkbox" id="ignoreKeywordCheck">
+                        <label class="form-check-label small text-muted" for="ignoreKeywordCheck">
+                            以后搜索同样的内容都不要管我了！
+                        </label>
+                    </div>
+                    <div class="form-check form-check-sm">
+                        <input class="form-check-input" type="checkbox" id="disableAllCheck">
+                        <label class="form-check-label small text-muted" for="disableAllCheck">
+                            以后我不管搜什么内容都不要管我了
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer justify-content-center">
+                <button type="button" class="btn btn-outline-secondary" id="dontCareBtn">
+                    <i class="fas fa-meh me-1"></i>少管我
+                </button>
+                <button type="button" class="btn btn-primary" id="reallyLearningBtn">
+                    <i class="fas fa-heart me-1"></i>我真的在学习
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// 搜索表单处理
+$(document).ready(function() {
+    $('#searchForm').on('submit', function(e) {
+        e.preventDefault();
+
+        const keyword = $('#searchInput').val().trim();
+        const skipWarning = $('#skipWarning').val() === 'true';
+
+        if (!keyword) {
+            return;
+        }
+
+        // 如果已经跳过警告，直接提交
+        if (skipWarning) {
+            this.submit();
+            return;
+        }
+
+        // 检查是否需要学习提醒
+        $.ajax({
+            url: '{% url "search_videos" %}',
+            type: 'GET',
+            data: {
+                'keyword': keyword,
+                'sort': $('input[name="sort"]:checked').val(),
+                'skip_warning': 'false'
+            },
+            success: function(response) {
+                if (response.show_warning) {
+                    // 显示学习提醒模态框
+                    $('#learningReminderModal').modal('show');
+                } else {
+                    // 直接跳转到搜索结果页面
+                    $('#searchForm')[0].submit();
+                }
+            },
+            error: function() {
+                // 如果检查失败，直接提交搜索
+                $('#searchForm')[0].submit();
+            }
+        });
+    });
+
+    // 学习提醒模态框按钮处理
+    $('#dontCareBtn, #reallyLearningBtn').on('click', function() {
+        const keyword = $('#searchInput').val().trim();
+        const ignoreKeyword = $('#ignoreKeywordCheck').is(':checked');
+        const disableAll = $('#disableAllCheck').is(':checked');
+
+        // 处理用户偏好设置
+        if (ignoreKeyword || disableAll) {
+            const action = disableAll ? 'disable_all' : 'ignore_keyword';
+
+            $.ajax({
+                url: '{% url "update_learning_reminder" %}',
+                type: 'POST',
+                data: {
+                    'action': action,
+                    'keyword': keyword,
+                    'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
+                },
+                success: function(response) {
+                    if (response.success) {
+                        console.log(response.message);
+                    }
+                },
+                error: function() {
+                    console.log('偏好设置更新失败');
+                }
+            });
+        }
+
+        // 设置跳过警告标志
+        $('#skipWarning').val('true');
+        // 关闭模态框
+        $('#learningReminderModal').modal('hide');
+
+        // 不直接提交表单，保留在首页
+        // 用户可以再次点击搜索按钮
+    });
+});
+
+// 统一的BV号提取函数 - 保持原始大小写，支持复杂URL参数
+function extractBVID(input) {
+    if (!input || typeof input !== 'string') {
+        return null;
+    }
+
+    input = input.trim();
+
+    // 1. 直接输入的BV号（完整格式）- 保持原始大小写
+    var directMatch = input.match(/^(BV[A-Za-z0-9]{10})$/i);
+    if (directMatch) {
+        return directMatch[1];  // 不转换大小写
+    }
+
+    // 2. 从URL中提取BV号 - 支持各种参数和格式
+    var urlPatterns = [
+        // 标准B站视频链接，支持后面的参数
+        /bilibili\.com\/video\/(BV[A-Za-z0-9]{10})(?:[/?]|$)/i,
+        // 短链接格式
+        /\/video\/(BV[A-Za-z0-9]{10})(?:[/?]|$)/i,
+        // 查询参数中的BV号
+        /[?&]bv=(BV[A-Za-z0-9]{10})/i,
+        /[?&]BV=(BV[A-Za-z0-9]{10})/i,
+        // 移动端链接
+        /m\.bilibili\.com\/video\/(BV[A-Za-z0-9]{10})/i,
+        // 其他可能的格式
+        /b23\.tv.*\/(BV[A-Za-z0-9]{10})/i
+    ];
+
+    for (var i = 0; i < urlPatterns.length; i++) {
+        var urlMatch = input.match(urlPatterns[i]);
+        if (urlMatch) {
+            return urlMatch[1];  // 保持原始大小写
+        }
+    }
+
+    // 3. 从任意文本中提取BV号 - 保持原始大小写
+    var textMatch = input.match(/BV[A-Za-z0-9]{10}/);
+    if (textMatch) {
+        return textMatch[0];  // 保持原始大小写
+    }
+
+    // 4. 如果以BV开头但格式不完整，返回null（不进行补全）
+    if (input.match(/^BV/i)) {
+        return null;  // 格式不完整的BV号直接返回null
+    }
+
+    return null;
+}
+
+// 显示详细错误信息的函数
+function showDetailedError(message, bvid) {
+    var errorHtml = '<div class="alert alert-danger">' +
+        '<h6><i class="fas fa-exclamation-triangle me-2"></i>获取视频信息失败</h6>' +
+        '<p class="mb-2">' + message + '</p>' +
+        '<div class="mt-3">' +
+        '<small class="text-muted">BV号: ' + bvid + '</small><br>' +
+        '<small class="text-muted">建议：</small>' +
+        '<ul class="small text-muted mt-1 mb-2">' +
+        '<li>检查BV号是否正确</li>' +
+        '<li>确认视频是否存在且可访问</li>' +
+        '<li>稍后重试或检查网络连接</li>' +
+        '</ul>' +
+        '<button type="button" class="btn btn-sm btn-outline-primary" onclick="retryImport(\'' + bvid + '\')">' +
+        '<i class="fas fa-redo me-1"></i>重试' +
+        '</button>' +
+        '</div>' +
+        '</div>';
+
+    $('#videoDetailContent').html(errorHtml).show();
+    $('#videoDetailError').hide();
+}
+
+// 重试导入函数
+function retryImport(bvid) {
+    $('#videoInput').val(bvid);
+    $('#importBtn').click();
+}
+
+
+
+$(document).ready(function() {
+    // 点击导入按钮
+    $('#importBtn').click(function() {
+        var videoInput = $('#videoInput').val().trim();
+        if (!videoInput) {
+            alert('请输入BV号或视频链接');
+            return;
+        }
+
+        // 改进的BV号提取逻辑
+        var bvid = extractBVID(videoInput);
+        if (!bvid) {
+            alert('无法识别有效的BV号，请检查输入格式');
+            return;
+        }
+
+        console.log('处理后的BV号: ' + bvid);
+        
+        // 显示模态窗口
+        $('#importVideoModal').modal('show');
+        $('#videoDetailLoading').show();
+        $('#videoDetailContent').hide();
+        $('#videoDetailError').hide();
+        
+        // 通过AJAX获取视频详情
+        $.ajax({
+            url: '/video/' + bvid + '/ajax/',
+            type: 'GET',
+            timeout: 15000,  // 15秒超时
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            success: function(response) {
+                console.log('AJAX响应:', response);
+                $('#videoDetailLoading').hide();
+                if (response.success) {
+                    $('#videoDetailContent').html(response.html).show();
+                    // 设置添加课程表单的action
+                    $('#addCourseForm').attr('action', '/add_to_course/' + bvid + '/');
+                    // 设置自定义标题默认值
+                    $('#customTitle').val(response.title);
+                    $('#videoDetailError').hide();
+                } else {
+                    showDetailedError(response.message || '未知错误', bvid);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('AJAX错误:', status, error);
+                console.error('响应内容:', xhr.responseText);
+                $('#videoDetailLoading').hide();
+
+                var errorMsg = '';
+                if (status === 'timeout') {
+                    errorMsg = '请求超时，可能是网络较慢或服务器繁忙，请稍后重试';
+                } else if (status === 'error') {
+                    if (xhr.status === 0) {
+                        errorMsg = '网络连接失败，请检查网络连接';
+                    } else if (xhr.status === 404) {
+                        errorMsg = '视频不存在或已被删除';
+                    } else if (xhr.status === 500) {
+                        errorMsg = '服务器内部错误，请稍后重试';
+                    } else {
+                        errorMsg = `请求失败 (HTTP ${xhr.status})，请稍后重试`;
+                    }
+                } else {
+                    errorMsg = '网络请求失败，请检查网络连接后重试';
+                }
+
+                showDetailedError(errorMsg, bvid);
+            }
+        });
+    });
+    
+    // 直接提交表单的方式导入视频
+    $('#importForm').on('submit', function(e) {
+        var videoInput = $('#videoInput').val().trim();
+        if (!videoInput) {
+            alert('请输入BV号或视频链接');
+            e.preventDefault();
+            return false;
+        }
+
+        // 使用统一的BV号提取函数
+        var bvid = extractBVID(videoInput);
+        if (!bvid) {
+            alert('无法识别有效的BV号，请检查输入格式');
+            e.preventDefault();
+            return false;
+        }
+
+        $('#videoInput').val(bvid);
+        return true;
+    });
+
+    {% if show_auth_modal and not user.is_authenticated %}
+    // 延迟显示登录模态框，让页面先加载完成
+    setTimeout(function() {
+        showLoginModal();
+    }, 500);
+    {% endif %}
+});
+</script>
+{% endblock %}

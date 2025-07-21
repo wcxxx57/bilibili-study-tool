@@ -1,0 +1,497 @@
+{% extends 'bilistudy/base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'bilistudy/css/custom-styles.css' %}">
+<style>
+/* 防止模态框闪烁的样式 */
+.modal {
+    transition: opacity 0.15s linear;
+}
+
+.modal.fade .modal-dialog {
+    transition: transform 0.15s ease-out;
+    transform: translate(0, -50px);
+}
+
+.modal.show .modal-dialog {
+    transform: none;
+}
+
+/* 编辑按钮样式 */
+.edit-btn {
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+}
+
+.card:hover .edit-btn {
+    opacity: 1;
+}
+
+/* 防止按钮重复点击 */
+.btn[disabled] {
+    pointer-events: none;
+}
+
+/* 课程列表样式 */
+.course-item {
+    transition: all 0.2s ease;
+}
+
+.course-item:hover {
+    transform: translateY(-2px);
+}
+
+.course-item .card {
+    border-left: 4px solid transparent;
+    transition: border-color 0.2s ease;
+}
+
+.course-item:hover .card {
+    border-left-color: var(--bs-primary);
+}
+
+/* 进度条样式 */
+.course-item .progress {
+    background-color: #e9ecef;
+}
+
+.course-item .progress-bar {
+    background: linear-gradient(90deg, #007bff, #0056b3);
+}
+
+/* 排序按钮样式 */
+.btn-group .btn {
+    border-radius: 0;
+}
+
+.btn-group .btn:first-child {
+    border-top-left-radius: 0.375rem;
+    border-bottom-left-radius: 0.375rem;
+}
+
+.btn-group .btn:last-child {
+    border-top-right-radius: 0.375rem;
+    border-bottom-right-radius: 0.375rem;
+}
+
+/* 排序图标动画 */
+.btn i {
+    transition: transform 0.2s ease;
+}
+
+.btn:hover i {
+    transform: scale(1.1);
+}
+
+/* 活跃状态的按钮 */
+.btn.active {
+    background-color: var(--bs-primary);
+    border-color: var(--bs-primary);
+    color: white;
+}
+
+.btn-outline-success.active {
+    background-color: var(--bs-success);
+    border-color: var(--bs-success);
+    color: white;
+}
+
+.card-body {
+    overflow: visible !important;
+}
+</style>
+{% endblock %}
+
+{% block title %}我的课程列表{% endblock %}
+
+{% block content %}
+<div class="card mb-4 border-0 shadow-sm">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h2 class="mb-2">我的课程列表</h2>
+                <p class="text-muted mb-0">管理您添加的学习课程，跟踪学习进度</p>
+            </div>
+            <!-- 排序按钮组 -->
+            <div class="d-flex gap-2">
+                <!-- 按时间排序按钮 -->
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="sortCourses('time')">
+                        <i class="fas fa-clock me-1"></i>时间
+                    </button>
+                    <button type="button" class="btn btn-outline-primary btn-sm" id="timeSortOrder" onclick="toggleTimeSort()" title="点击切换升序/降序">
+                        <i class="fas fa-sort-down" id="timeIcon"></i>
+                    </button>
+                </div>
+
+                <!-- 按进度排序按钮 -->
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-outline-success btn-sm" onclick="sortCourses('progress')">
+                        <i class="fas fa-chart-line me-1"></i>进度
+                    </button>
+                    <button type="button" class="btn btn-outline-success btn-sm" id="progressSortOrder" onclick="toggleProgressSort()" title="点击切换升序/降序">
+                        <i class="fas fa-sort-down" id="progressIcon"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if not courses %}
+<div class="row justify-content-center animate-fade-in">
+    <div class="col-md-8">
+        <div class="card text-center p-5 border-0 shadow-sm">
+            <div class="card-body">
+                <div class="mb-4" style="width: 80px; height: 80px; background-color: var(--primary-light); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto;">
+                    <i class="fas fa-book fa-2x" style="color: var(--primary-color);"></i>
+                </div>
+                <h3 class="mb-3">您还没有添加任何课程</h3>
+                <p class="text-muted mb-4">通过搜索B站视频，将喜欢的课程添加到列表中</p>
+                <a href="{% url 'index' %}" class="btn btn-bili btn-lg">
+                    <i class="fas fa-search me-2"></i> 去搜索课程
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<!-- 课程列表 -->
+<div class="course-list">
+    {% for course in courses %}
+    <div class="course-item mb-3 animate-fade-in course-card" data-add-time="{{ course.add_time|date:'Y-m-d H:i:s' }}" data-progress="{{ course.progress_percentage|default:0 }}">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <div class="row align-items-center">
+                    <!-- 课程信息 -->
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-center mb-2">
+                            <span class="badge bg-primary me-2">课程</span>
+                            <span class="text-muted small">{{ course.add_time|date:"Y-m-d" }}</span>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <h5 class="mb-0 flex-grow-1">{{ course.custom_title|default:course.video.title }}</h5>
+                            <button type="button" class="btn btn-sm btn-outline-secondary edit-course-btn ms-2"
+                                    data-course-id="{{ course.id }}"
+                                    data-current-title="{{ course.custom_title|default:course.video.title }}"
+                                    data-original-title="{{ course.video.title }}"
+                                    onclick="openEditModal({{ course.id }}, '{{ course.custom_title|default:course.video.title|escapejs }}', '{{ course.video.title|escapejs }}')"
+                                    title="编辑课程名称">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 学习进度 -->
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <div class="mb-1">
+                                <span class="h5 text-primary">{{ course.progress_percentage|default:0 }}%</span>
+                            </div>
+                            <div class="progress" style="height: 6px;">
+                                <div class="progress-bar" role="progressbar"
+                                     style="width: {{ course.progress_percentage|default:0 }}%"
+                                     aria-valuenow="{{ course.progress_percentage|default:0 }}"
+                                     aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                            <small class="text-muted">学习进度</small>
+                        </div>
+                    </div>
+
+                    <!-- 操作按钮 -->
+                    <div class="col-md-3">
+                        <div class="d-flex flex-column gap-2">
+                            <div class="d-flex gap-2">
+                                <a href="{% url 'course_detail' course.id %}" class="btn btn-sm btn-primary flex-fill">
+                                    <i class="fas fa-book-open me-1"></i> 学习详情
+                                </a>
+                                <a href="https://www.bilibili.com/video/{{ course.video.bvid }}" target="_blank" class="btn btn-sm btn-outline-primary flex-fill">
+                                    <i class="fas fa-external-link-alt me-1"></i> B站观看
+                                </a>
+                            </div>
+                            <form action="{% url 'remove_course' course.id %}" method="post" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-outline-danger w-100"
+                                        onclick="return confirm('确定要从课程列表中移除《{{ course.custom_title|default:course.video.title }}》吗？')">
+                                    <i class="fas fa-trash-alt me-1"></i> 移除课程
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- 统一的编辑课程名称模态框 -->
+<div class="modal fade" id="editCourseModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-edit me-2"></i>编辑课程名称
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-lightbulb me-2"></i>
+                    <strong>提示：</strong>自定义课程名称，方便您识别和管理学习内容
+                </div>
+
+                <!-- 课程信息 -->
+                <div class="card bg-light mb-4">
+                    <div class="card-body">
+                        <h6 class="card-title">
+                            <i class="fas fa-video me-2 text-primary"></i>课程信息
+                        </h6>
+                        <div class="row">
+                            <div class="col-12">
+                                <strong>原始标题：</strong><br>
+                                <span id="originalTitle" class="text-muted"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 编辑表单 -->
+                <form id="editCourseForm">
+                    {% csrf_token %}
+                    <input type="hidden" id="editCourseId" name="course_id">
+
+                    <div class="mb-3">
+                        <label for="newCourseTitle" class="form-label">
+                            <i class="fas fa-graduation-cap me-1 text-primary"></i>新的课程名称
+                        </label>
+                        <input type="text" class="form-control" id="newCourseTitle" name="custom_title"
+                               required maxlength="100" placeholder="请输入新的课程名称">
+                        <div class="form-text">最多100个字符</div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>取消
+                </button>
+                <button type="button" class="btn btn-primary" id="saveCourseTitleBtn" onclick="saveCourseTitle()">
+                    <i class="fas fa-save me-1"></i>保存修改
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+// 排序状态
+let timeSortDesc = true; // true为降序（最新），false为升序（最早）
+let progressSortDesc = true; // true为降序（高到低），false为升序（低到高）
+
+// 打开编辑模态框
+function openEditModal(courseId, currentTitle, originalTitle) {
+    // 设置模态框数据
+    $('#editCourseId').val(courseId);
+    $('#newCourseTitle').val(currentTitle);
+    $('#originalTitle').text(originalTitle);
+
+    // 显示模态框
+    $('#editCourseModal').modal('show');
+}
+
+// 保存课程标题
+function saveCourseTitle() {
+    var courseId = $('#editCourseId').val();
+    var newTitle = $('#newCourseTitle').val().trim();
+
+    // 验证输入
+    if (newTitle === '') {
+        alert('课程名称不能为空！');
+        $('#newCourseTitle').focus();
+        return;
+    }
+
+    if (newTitle.length > 100) {
+        alert('课程名称不能超过100个字符！');
+        $('#newCourseTitle').focus();
+        return;
+    }
+
+    // 显示保存状态
+    var saveBtn = $('#saveCourseTitleBtn');
+    var originalText = saveBtn.html();
+    saveBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i>保存中...');
+
+    // 提交更新
+    $.ajax({
+        url: '/update_course_title/' + courseId + '/',
+        type: 'POST',
+        data: {
+            'custom_title': newTitle,
+            'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
+        },
+        success: function(response) {
+            if (response.success) {
+                // 更新页面显示的课程名称
+                var editBtn = $('[data-course-id="' + courseId + '"]');
+                var courseCard = editBtn.closest('.course-card');
+
+                // 更新卡片中显示的标题
+                courseCard.find('h5').text(newTitle);
+
+                // 更新编辑按钮的数据属性，确保下次点击时显示正确的名称
+                editBtn.attr('data-current-title', newTitle);
+
+                // 同时更新onclick属性中的参数
+                var originalTitle = editBtn.attr('data-original-title');
+                var newOnclick = "openEditModal(" + courseId + ", '" + newTitle.replace(/'/g, "\\'") + "', '" + originalTitle.replace(/'/g, "\\'") + "')";
+                editBtn.attr('onclick', newOnclick);
+
+                // 关闭模态框
+                $('#editCourseModal').modal('hide');
+
+                // 显示成功提示
+                alert('课程名称修改成功！');
+            } else {
+                alert('修改失败：' + (response.message || '未知错误'));
+            }
+        },
+        error: function() {
+            alert('网络错误，请稍后再试');
+        },
+        complete: function() {
+            // 恢复按钮状态
+            saveBtn.prop('disabled', false).html(originalText);
+        }
+    });
+}
+
+$(document).ready(function() {
+    // 初始化排序图标
+    updateTimeIcon();
+    updateProgressIcon();
+
+    // 初始化编辑课程功能
+    initEditCourseModal();
+
+    // 模态框显示后聚焦输入框 - 使用事件委托
+    $(document).on('shown.bs.modal', '#editCourseModal', function() {
+        $('#newCourseTitle').focus().select();
+    });
+
+
+
+    // 模态框隐藏时重置表单 - 使用事件委托
+    $(document).on('hidden.bs.modal', '#editCourseModal', function() {
+        $('#editCourseForm')[0].reset();
+        $('#saveCourseTitleBtn').prop('disabled', false).html('<i class="fas fa-save me-1"></i>保存修改');
+    });
+});
+
+// 初始化编辑课程模态框
+function initEditCourseModal() {
+    // 这个函数现在只处理事件委托的编辑按钮点击
+    // 其他事件绑定已移到 $(document).ready() 中
+}
+
+
+
+// 显示消息提示（保留原函数以防其他地方使用）
+function showMessage(message, type) {
+    var alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+    var alertHtml = '<div class="alert ' + alertClass + ' alert-dismissible fade show" role="alert">' +
+                    message +
+                    '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>' +
+                    '</div>';
+
+    // 在页面顶部显示消息
+    $('.container').prepend(alertHtml);
+
+    // 3秒后自动消失
+    setTimeout(function() {
+        $('.alert').fadeOut();
+    }, 3000);
+}
+
+// 切换时间排序顺序
+function toggleTimeSort() {
+    timeSortDesc = !timeSortDesc;
+    updateTimeIcon();
+    sortCourses('time');
+}
+
+// 切换进度排序顺序
+function toggleProgressSort() {
+    progressSortDesc = !progressSortDesc;
+    updateProgressIcon();
+    sortCourses('progress');
+}
+
+// 更新时间排序图标
+function updateTimeIcon() {
+    const icon = $('#timeIcon');
+    if (timeSortDesc) {
+        icon.removeClass('fa-sort-up').addClass('fa-sort-down');
+        $('#timeSortOrder').attr('title', '当前：最新在前，点击切换为最早在前');
+    } else {
+        icon.removeClass('fa-sort-down').addClass('fa-sort-up');
+        $('#timeSortOrder').attr('title', '当前：最早在前，点击切换为最新在前');
+    }
+}
+
+// 更新进度排序图标
+function updateProgressIcon() {
+    const icon = $('#progressIcon');
+    if (progressSortDesc) {
+        icon.removeClass('fa-sort-up').addClass('fa-sort-down');
+        $('#progressSortOrder').attr('title', '当前：高进度在前，点击切换为低进度在前');
+    } else {
+        icon.removeClass('fa-sort-down').addClass('fa-sort-up');
+        $('#progressSortOrder').attr('title', '当前：低进度在前，点击切换为高进度在前');
+    }
+}
+
+// 排序功能
+function sortCourses(sortType) {
+    const container = $('.course-list');
+    const cards = container.find('.course-card').get();
+
+    // 移除所有按钮的活跃状态
+    $('.btn-group .btn').removeClass('active');
+
+    cards.sort(function(a, b) {
+        const cardA = $(a);
+        const cardB = $(b);
+
+        if (sortType === 'time') {
+            const result = new Date(cardB.data('add-time')) - new Date(cardA.data('add-time'));
+            // 添加活跃状态
+            $('.btn-outline-primary').addClass('active');
+            return timeSortDesc ? result : -result;
+        } else if (sortType === 'progress') {
+            const result = parseFloat(cardB.data('progress')) - parseFloat(cardA.data('progress'));
+            // 添加活跃状态
+            $('.btn-outline-success').addClass('active');
+            return progressSortDesc ? result : -result;
+        }
+        return 0;
+    });
+
+    // 重新排列卡片
+    $.each(cards, function(index, card) {
+        container.append(card);
+    });
+
+    // 添加动画效果
+    $('.course-card').addClass('animate-fade-in');
+}
+</script>
+{% endblock %}
+
+{% endblock %}

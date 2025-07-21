@@ -1,0 +1,16 @@
+# 敏感信息 - 绝对不能上传
+.env
+
+# 数据库文件
+db.sqlite3
+
+# Python 缓存
+__pycache__/
+*.pyc
+
+# Django 相关
+*.log
+
+# 虚拟环境
+venv/
+env/
