@@ -3491,7 +3491,7 @@ def ai_content_analysis(request):
                 # DeepSeek失败，尝试Gemini
                 try:
                     import google.generativeai as genai
-                    api_key = "AIzaSyC1CWNsj_9QDinZNm-RTnu1lgHU5VbROf0"
+                    api_key = os.getenv('GEMINI_API_KEY')
                     genai.configure(api_key=api_key)
                     model = genai.GenerativeModel('gemini-1.5-flash')
                     response = model.generate_content(f"{system_prompt}\n\n{prompt}")
